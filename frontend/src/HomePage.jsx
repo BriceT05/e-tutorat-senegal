@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import useIsMobile from './useIsMobile';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
@@ -96,6 +97,7 @@ const GeoPatter = ({ opacity = 0.04 }) => (
 const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, onTarifs, currentUser, onDashboard }) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -103,80 +105,115 @@ const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, onT
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  const links = [
+    { label: 'Tuteurs', action: onTuteurs },
+    { label: 'Matières', action: onMatieres },
+    { label: 'Tarifs', action: onTarifs },
+    { label: 'Blog', action: onBlog },
+  ];
+
+  const closeAndGo = (action) => { setOpen(false); action(); };
+
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-      backgroundColor: scrolled ? 'rgba(255,253,245,0.95)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(16px)' : 'none',
-      boxShadow: scrolled ? '0 1px 20px rgba(62,42,31,0.08)' : 'none',
-      transition: 'all 0.3s ease',
-      fontFamily: SANS,
+      backgroundColor: scrolled || open ? 'rgba(255,253,245,0.97)' : 'transparent',
+      backdropFilter: scrolled || open ? 'blur(16px)' : 'none',
+      boxShadow: scrolled || open ? '0 1px 20px rgba(62,42,31,0.08)' : 'none',
+      transition: 'all 0.3s ease', fontFamily: SANS,
     }}>
-      <div style={{
-        maxWidth: '1400px', margin: '0 auto', padding: '0 5%',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: '80px',
-      }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? '64px' : '80px' }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: C.primary, display: 'grid', placeItems: 'center', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>
-            <BookOpen size={24} color="#fff" />
+          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>
+            <BookOpen size={22} color="#fff" />
           </div>
           <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.4rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
+            <div style={{ fontFamily: SERIF, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
           </div>
         </div>
 
         {/* Links desktop */}
-        <div style={{ display: 'flex', gap: '36px', alignItems: 'center' }}>
-          {[
-            { label: 'Tuteurs', action: onTuteurs },
-            { label: 'Matières', action: onMatieres },
-            { label: 'Tarifs', action: onTarifs },
-            { label: 'Blog', action: onBlog },
-          ].map(({ label, action }) => (
-            <span key={label} onClick={action}
-              style={{ fontWeight: 600, fontSize: '1rem', color: C.muted, cursor: 'pointer', transition: 'color 0.2s' }}
-              onMouseEnter={e => e.target.style.color = C.primary}
-              onMouseLeave={e => e.target.style.color = C.muted}>{label}</span>
-          ))}
-        </div>
+        {!isMobile && (
+          <div style={{ display: 'flex', gap: '36px', alignItems: 'center' }}>
+            {links.map(({ label, action }) => (
+              <span key={label} onClick={action}
+                style={{ fontWeight: 600, fontSize: '1rem', color: C.muted, cursor: 'pointer', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.target.style.color = C.primary}
+                onMouseLeave={e => e.target.style.color = C.muted}>{label}</span>
+            ))}
+          </div>
+        )}
 
-        {/* CTA */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        {/* CTA desktop / Hamburger mobile */}
+        {isMobile ? (
+          <button onClick={() => setOpen(o => !o)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.text, padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {open ? <X size={26} /> : <Menu size={26} />}
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {currentUser ? (
+              <Btn style={{ padding: '10px 22px', fontSize: '0.95rem' }} onClick={onDashboard}>Mon espace <ArrowRight size={18} /></Btn>
+            ) : (
+              <>
+                <button onClick={onConnexion} style={{ padding: '10px 22px', borderRadius: '999px', border: `2px solid ${C.primary}`, background: 'transparent', color: C.primary, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', fontFamily: SANS }}>Connexion</button>
+                <Btn style={{ padding: '10px 22px', fontSize: '0.95rem' }} onClick={onInscription}>S'inscrire <ArrowRight size={18} /></Btn>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Menu mobile déroulant */}
+      {isMobile && open && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          style={{ backgroundColor: 'rgba(255,253,245,0.98)', borderTop: `1px solid ${C.accent}`, padding: '16px 5% 24px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {links.map(({ label, action }) => (
+            <button key={label} onClick={() => closeAndGo(action)}
+              style={{ textAlign: 'left', background: 'none', border: 'none', padding: '14px 12px', fontSize: '1.1rem', fontWeight: 600, color: C.muted, cursor: 'pointer', fontFamily: SANS, borderRadius: '12px' }}>
+              {label}
+            </button>
+          ))}
+          <div style={{ height: '1px', backgroundColor: C.accent, margin: '8px 0' }} />
           {currentUser ? (
-            <Btn style={{ padding: '10px 22px', fontSize: '0.95rem' }} onClick={onDashboard}>
-              Mon espace <ArrowRight size={18} />
-            </Btn>
+            <button onClick={() => closeAndGo(onDashboard)}
+              style={{ padding: '14px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
+              Mon espace →
+            </button>
           ) : (
-            <>
-              <button onClick={onConnexion} style={{ padding: '10px 22px', borderRadius: '999px', border: `2px solid ${C.primary}`, background: 'transparent', color: C.primary, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', fontFamily: SANS }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button onClick={() => closeAndGo(onConnexion)}
+                style={{ padding: '14px', borderRadius: '14px', border: `2px solid ${C.primary}`, background: 'transparent', color: C.primary, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
                 Connexion
               </button>
-              <Btn style={{ padding: '10px 22px', fontSize: '0.95rem' }} onClick={onInscription}>
-                S'inscrire <ArrowRight size={18} />
-              </Btn>
-            </>
+              <button onClick={() => closeAndGo(onInscription)}
+                style={{ padding: '14px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
+                S'inscrire →
+              </button>
+            </div>
           )}
-        </div>
-      </div>
+        </motion.div>
+      )}
     </nav>
   );
 };
 
 // ─── 2. HERO ─────────────────────────────────────────────────────────────────
-const Hero = ({ onInscription, onTuteurs }) => (
+const Hero = ({ onInscription, onTuteurs }) => {
+  const isMobile = useIsMobile();
+  return (
   <section style={{
     position: 'relative', minHeight: '100vh', backgroundColor: C.background,
-    overflow: 'hidden', padding: '0 5%',
+    overflow: 'hidden', padding: isMobile ? '0 6%' : '0 5%',
     display: 'flex', flexDirection: 'column', justifyContent: 'center',
-    fontFamily: SANS, paddingTop: '80px',
+    fontFamily: SANS, paddingTop: isMobile ? '64px' : '80px',
   }}>
     <GeoPatter />
     <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '40vw', height: '40vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.22) 0%, transparent 70%)', filter: 'blur(60px)', zIndex: 0 }} />
 
-    <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: '60px', alignItems: 'center', zIndex: 1, padding: '80px 0' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 1fr', gap: isMobile ? '32px' : '60px', alignItems: 'center', zIndex: 1, padding: isMobile ? '48px 0 64px' : '80px 0' }}>
       {/* Left */}
       <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, ease: 'easeOut' }}>
         <SectionBadge><Globe size={16} /> L'excellence éducative au Sénégal</SectionBadge>
@@ -196,60 +233,59 @@ const Hero = ({ onInscription, onTuteurs }) => (
         </div>
 
         {/* Stats */}
-        <div style={{ marginTop: '72px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+        <div style={{ marginTop: isMobile ? '36px' : '72px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {[
             { icon: Users, value: '500+', label: 'Tuteurs' },
             { icon: GraduationCap, value: '10 000+', label: 'Élèves' },
             { icon: BookOpen, value: '50+', label: 'Matières' },
           ].map(({ icon: Icon, value, label }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.15 }}
-              style={{ backgroundColor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(10px)', padding: '1.4rem 1.8rem', borderRadius: '24px', border: `1px solid ${C.accent}`, minWidth: '155px', boxShadow: '0 4px 20px rgba(62,42,31,0.04)' }}>
-              <div style={{ backgroundColor: C.accent, padding: '10px', borderRadius: '12px', marginBottom: '12px', display: 'inline-block' }}>
-                <Icon size={24} color={C.primary} />
+              style={{ backgroundColor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(10px)', padding: isMobile ? '1rem 1.2rem' : '1.4rem 1.8rem', borderRadius: '20px', border: `1px solid ${C.accent}`, flex: isMobile ? '1' : undefined, minWidth: isMobile ? '80px' : '155px', boxShadow: '0 4px 20px rgba(62,42,31,0.04)' }}>
+              <div style={{ backgroundColor: C.accent, padding: '8px', borderRadius: '10px', marginBottom: '10px', display: 'inline-block' }}>
+                <Icon size={isMobile ? 18 : 24} color={C.primary} />
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 900, color: C.text }}>{value}</div>
-              <div style={{ fontSize: '0.85rem', color: C.light, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+              <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: C.text }}>{value}</div>
+              <div style={{ fontSize: '0.78rem', color: C.light, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
             </motion.div>
           ))}
         </div>
       </motion.div>
 
-      {/* Right illustration */}
-      <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: 'circOut' }}
-        style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '460px', height: '560px', borderRadius: '40px', overflow: 'hidden', boxShadow: `28px 28px 0px ${C.secondary}`, background: `linear-gradient(135deg, ${C.accent} 0%, rgba(251,191,36,0.18) 100%)`, border: `8px solid ${C.surface}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
-          <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }} style={{ fontSize: '110px', marginBottom: '16px' }}>📚</motion.div>
-          <div style={{ height: '4px', width: '80px', backgroundColor: C.primary, margin: '0 auto 16px' }} />
-          <p style={{ fontFamily: SERIF, fontSize: '1.7rem', color: C.text, fontWeight: 700, textAlign: 'center', padding: '0 40px', lineHeight: 1.3 }}>Éducation sans limites</p>
-
-          {/* Floating tutor card */}
-          <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6, duration: 0.8 }}
-            style={{ position: 'absolute', bottom: '36px', left: '-16px', background: C.surface, padding: '16px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: C.primary, display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '22px', flexShrink: 0 }}>🇸🇳</div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1rem', color: C.text }}>Moussa Diallo</div>
-              <div style={{ fontSize: '0.85rem', color: C.light }}>Tuteur en Mathématiques</div>
-              <Stars n={5} />
-            </div>
-          </motion.div>
-
-          {/* Online badge */}
-          <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}
-            style={{ position: 'absolute', top: '28px', right: '-12px', background: C.surface, padding: '10px 16px', borderRadius: '100px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
-            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: C.text }}>12 tuteurs en ligne</span>
-          </motion.div>
-        </div>
-      </motion.div>
+      {/* Right illustration — masquée sur mobile */}
+      {!isMobile && (
+        <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: 'circOut' }}
+          style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: '460px', height: '560px', borderRadius: '40px', overflow: 'hidden', boxShadow: `28px 28px 0px ${C.secondary}`, background: `linear-gradient(135deg, ${C.accent} 0%, rgba(251,191,36,0.18) 100%)`, border: `8px solid ${C.surface}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
+            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }} style={{ fontSize: '110px', marginBottom: '16px' }}>📚</motion.div>
+            <div style={{ height: '4px', width: '80px', backgroundColor: C.primary, margin: '0 auto 16px' }} />
+            <p style={{ fontFamily: SERIF, fontSize: '1.7rem', color: C.text, fontWeight: 700, textAlign: 'center', padding: '0 40px', lineHeight: 1.3 }}>Éducation sans limites</p>
+            <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6, duration: 0.8 }}
+              style={{ position: 'absolute', bottom: '36px', left: '-16px', background: C.surface, padding: '16px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: C.primary, display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '22px', flexShrink: 0 }}>🇸🇳</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '1rem', color: C.text }}>Moussa Diallo</div>
+                <div style={{ fontSize: '0.85rem', color: C.light }}>Tuteur en Mathématiques</div>
+                <Stars n={5} />
+              </div>
+            </motion.div>
+            <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}
+              style={{ position: 'absolute', top: '28px', right: '-12px', background: C.surface, padding: '10px 16px', borderRadius: '100px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: C.text }}>12 tuteurs en ligne</span>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
     </div>
 
-    {/* Bottom stripe */}
     <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '10px', background: `repeating-linear-gradient(45deg, ${C.primary}, ${C.primary} 40px, ${C.secondary} 40px, ${C.secondary} 80px)` }} />
   </section>
-);
+  );
+};
 
 // ─── 3. COMMENT ÇA MARCHE ────────────────────────────────────────────────────
 const HowItWorks = () => {
+  const isMobile = useIsMobile();
   const steps = [
     { icon: Users, n: '01', title: 'Créez votre profil', desc: "Inscrivez-vous gratuitement en 2 minutes. Indiquez le niveau scolaire, les matières et vos disponibilités." },
     { icon: Search, n: '02', title: 'Trouvez votre tuteur', desc: "Parcourez notre sélection de tuteurs vérifiés, lisez les avis et choisissez celui qui correspond à votre enfant." },
@@ -268,7 +304,7 @@ const HowItWorks = () => {
           </p>
         </FadeIn>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '20px' : '40px' }}>
           {steps.map(({ icon: Icon, n, title, desc }, i) => (
             <FadeIn key={n} delay={i * 0.15}>
               <div style={{ background: C.surface, borderRadius: '28px', padding: '44px 36px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.06)', position: 'relative', overflow: 'hidden', height: '100%' }}>
@@ -328,8 +364,10 @@ const TutorCard = ({ tutor, delay }) => (
   </FadeIn>
 );
 
-const FeaturedTutors = ({ onTuteurs }) => (
-  <section style={{ backgroundColor: '#FFF9F0', padding: '100px 5%', fontFamily: SANS }}>
+const FeaturedTutors = ({ onTuteurs }) => {
+  const isMobile = useIsMobile();
+  return (
+  <section style={{ backgroundColor: '#FFF9F0', padding: isMobile ? '60px 5%' : '100px 5%', fontFamily: SANS }}>
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       <FadeIn style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '56px', flexWrap: 'wrap', gap: '20px' }}>
         <div>
@@ -341,7 +379,7 @@ const FeaturedTutors = ({ onTuteurs }) => (
       </FadeIn>
 
       {TUTORS.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? '14px' : '24px' }}>
           {TUTORS.map((t, i) => <TutorCard key={t.name} tutor={t} delay={i * 0.1} />)}
         </div>
       ) : (
@@ -352,7 +390,8 @@ const FeaturedTutors = ({ onTuteurs }) => (
       )}
     </div>
   </section>
-);
+  );
+};
 
 // ─── 5. MATIÈRES ─────────────────────────────────────────────────────────────
 const SUBJECTS = [
@@ -370,15 +409,17 @@ const SUBJECTS = [
   { icon: BookOpen, label: 'LV2 Arabe', color: '#EDE9FE' },
 ];
 
-const Subjects = () => (
-  <section style={{ backgroundColor: C.background, padding: '100px 5%', fontFamily: SANS }}>
+const Subjects = () => {
+  const isMobile = useIsMobile();
+  return (
+  <section style={{ backgroundColor: C.background, padding: isMobile ? '60px 5%' : '100px 5%', fontFamily: SANS }}>
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       <FadeIn style={{ textAlign: 'center', marginBottom: '60px' }}>
         <SectionBadge><BookOpen size={16} /> 50+ matières disponibles</SectionBadge>
         <SectionTitle center>Toutes les matières,<br /><span style={{ color: C.primary, fontStyle: 'italic' }}>tous les niveaux</span></SectionTitle>
       </FadeIn>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: isMobile ? '12px' : '20px' }}>
         {SUBJECTS.map(({ icon: Icon, label, color }, i) => (
           <FadeIn key={label} delay={i * 0.05}>
             <motion.div whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(62,42,31,0.1)' }}
@@ -393,13 +434,16 @@ const Subjects = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ─── 6. TÉMOIGNAGES ──────────────────────────────────────────────────────────
 const TESTIMONIALS = [];
 
-const Testimonials = () => (
-  <section style={{ backgroundColor: '#FFF9F0', padding: '100px 5%', fontFamily: SANS }}>
+const Testimonials = () => {
+  const isMobile = useIsMobile();
+  return (
+  <section style={{ backgroundColor: '#FFF9F0', padding: isMobile ? '60px 5%' : '100px 5%', fontFamily: SANS }}>
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       <FadeIn style={{ textAlign: 'center', marginBottom: '64px' }}>
         <SectionBadge><Star size={16} fill={C.primary} color={C.primary} /> Ils nous font confiance</SectionBadge>
@@ -407,7 +451,7 @@ const Testimonials = () => (
       </FadeIn>
 
       {TESTIMONIALS.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '28px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '28px' }}>
           {TESTIMONIALS.map(({ emoji, name, role, quote }, i) => (
             <FadeIn key={name} delay={i * 0.15}>
               <div style={{ background: C.surface, borderRadius: '28px', padding: '40px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.06)', position: 'relative' }}>
@@ -432,7 +476,8 @@ const Testimonials = () => (
       )}
     </div>
   </section>
-);
+  );
+};
 
 // ─── 7. BANDEAU CTA ──────────────────────────────────────────────────────────
 const CtaBanner = ({ onInscription }) => (
@@ -472,9 +517,11 @@ const CtaBanner = ({ onInscription }) => (
 );
 
 // ─── 8. FOOTER ───────────────────────────────────────────────────────────────
-const Footer = ({ onLegal }) => (
+const Footer = ({ onLegal }) => {
+  const isMobile = useIsMobile();
+  return (
   <footer style={{ backgroundColor: C.text, color: 'rgba(255,253,245,0.7)', fontFamily: SANS }}>
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '80px 5% 48px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.4fr', gap: '60px' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '48px 5% 32px' : '80px 5% 48px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr 1.4fr', gap: isMobile ? '36px' : '60px' }}>
       {/* Brand */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
@@ -555,7 +602,8 @@ const Footer = ({ onLegal }) => (
       <div style={{ flex: 1, backgroundColor: '#E31B23' }} />
     </div>
   </footer>
-);
+  );
+};
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function HomePage({ onInscription, onConnexion, onTuteurs, onMatieres, onBlog, onTarifs, currentUser, onDashboard, onLegal }) {

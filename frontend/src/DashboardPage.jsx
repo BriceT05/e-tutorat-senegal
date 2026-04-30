@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import api from './api.js';
+import useIsMobile from './useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Calendar, Clock, Star, Users, Bell,
@@ -1345,87 +1346,114 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  const isMobile = useIsMobile();
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.background, display: 'flex', fontFamily: SANS }}>
+    <div style={{ minHeight: '100vh', backgroundColor: C.background, display: 'flex', flexDirection: isMobile ? 'column' : 'row', fontFamily: SANS }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700;800;900&display=swap'); *, *::before, *::after { box-sizing: border-box; }`}</style>
 
-      {/* ── SIDEBAR ── */}
-      <aside style={{ width: '260px', flexShrink: 0, backgroundColor: C.surface, borderRight: `1px solid ${C.accent}`, position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', padding: '24px 16px', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px', marginBottom: '28px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-            <BookOpen size={20} color="#fff" />
+      {/* ── SIDEBAR desktop ── */}
+      {!isMobile && (
+        <aside style={{ width: '260px', flexShrink: 0, backgroundColor: C.surface, borderRight: `1px solid ${C.accent}`, position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', padding: '24px 16px', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px', marginBottom: '28px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
+              <BookOpen size={20} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: C.accent, borderRadius: '16px', marginBottom: '24px' }}>
+            <UserAvatar user={currentUser} size={42} radius="12px" />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 800, color: C.text, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser.prenom} {currentUser.nom}</div>
+              <div style={{ fontSize: '0.8rem', color: C.muted }}>{isEleve ? (currentUser.niveau || 'Élève') : (currentUser.matieres?.[0] || 'Tuteur')}</div>
+            </div>
           </div>
-        </div>
-
-        {/* Avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: C.accent, borderRadius: '16px', marginBottom: '24px' }}>
-          <UserAvatar user={currentUser} size={42} radius="12px" />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 800, color: C.text, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser.prenom} {currentUser.nom}</div>
-            <div style={{ fontSize: '0.8rem', color: C.muted }}>{isEleve ? (currentUser.niveau || 'Élève') : (currentUser.matieres?.[0] || 'Tuteur')}</div>
+          <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {navItems.map(item => (
+              <NavItem key={item.id} icon={item.icon} label={item.label} active={activeNav === item.id}
+                onClick={() => setActiveNav(item.id)}
+                badge={item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : 0} />
+            ))}
+          </nav>
+          <div style={{ borderTop: `1px solid ${C.accent}`, paddingTop: '16px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <NavItem icon={Home} label="Retour à l'accueil" onClick={onGoHome} />
+            <NavItem icon={LogOut} label="Déconnexion" onClick={onLogout} />
           </div>
-        </div>
-
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {navItems.map(item => (
-            <NavItem key={item.id} icon={item.icon} label={item.label}
-              active={activeNav === item.id}
-              onClick={() => setActiveNav(item.id)}
-              badge={item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : 0} />
-          ))}
-        </nav>
-
-        <div style={{ borderTop: `1px solid ${C.accent}`, paddingTop: '16px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <NavItem icon={Home} label="Retour à l'accueil" onClick={onGoHome} />
-          <NavItem icon={LogOut} label="Déconnexion" onClick={onLogout} />
-        </div>
-      </aside>
+        </aside>
+      )}
 
       {/* ── MAIN ── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <header style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.accent}`, padding: '0 32px', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-          <div>
-            <h1 style={{ fontFamily: SERIF, fontSize: '1.5rem', color: C.text, margin: 0, fontWeight: 700 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: isMobile ? '72px' : 0 }}>
+        {/* Header */}
+        <header style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.accent}`, padding: isMobile ? '0 16px' : '0 32px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
+                  <BookOpen size={17} color="#fff" />
+                </div>
+              </div>
+            )}
+            <h1 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.1rem' : '1.5rem', color: C.text, margin: 0, fontWeight: 700 }}>
               {navItems.find(n => n.id === activeNav)?.label || 'Tableau de bord'}
             </h1>
-            <p style={{ color: C.light, fontSize: '0.85rem', margin: 0 }}>
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <NotifCenter user={currentUser} />
-            <UserAvatar user={currentUser} size={36} radius="10px" />
-            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: C.text }}>{currentUser.prenom}</span>
+            <UserAvatar user={currentUser} size={32} radius="9px" />
+            {!isMobile && <span style={{ fontWeight: 600, fontSize: '0.9rem', color: C.text }}>{currentUser.prenom}</span>}
           </div>
         </header>
 
         {!currentUser.emailVerified && <EmailVerifyBanner userId={currentUser.id} />}
 
-        <div style={{ flex: 1, padding: activeNav === 'messages' ? '20px' : '32px', overflowY: activeNav === 'messages' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, padding: activeNav === 'messages' ? (isMobile ? '12px' : '20px') : (isMobile ? '16px' : '32px'), overflowY: activeNav === 'messages' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
           <AnimatePresence mode="wait">
             <motion.div key={activeNav} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}
               style={activeNav === 'messages' ? { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 } : {}}>
-              {activeNav === 'dashboard' && (
-                isEleve
-                  ? <DashboardEleve user={currentUser} requests={requests} onTuteurs={onTuteurs} />
-                  : <DashboardTuteur user={currentUser} requests={requests} onUpdateRequests={fetchRequests} />
+              {activeNav === 'dashboard' && (isEleve
+                ? <DashboardEleve user={currentUser} requests={requests} onTuteurs={onTuteurs} />
+                : <DashboardTuteur user={currentUser} requests={requests} onUpdateRequests={fetchRequests} />
               )}
-              {activeNav === 'messages' && <MessagesPanel currentUser={currentUser} />}
+              {activeNav === 'messages'  && <MessagesPanel currentUser={currentUser} />}
               {activeNav === 'paiements' && <PaiementsPanel user={currentUser} requests={requests} />}
-              {activeNav === 'profil' && (
-                <MonProfil user={currentUser} onUserUpdate={onUserUpdate} />
-              )}
-              {activeNav === 'settings' && (
-                <SettingsPanel user={currentUser} onLogout={onLogout} />
-              )}
+              {activeNav === 'profil'    && <MonProfil user={currentUser} onUserUpdate={onUserUpdate} />}
+              {activeNav === 'settings'  && <SettingsPanel user={currentUser} onLogout={onLogout} />}
             </motion.div>
           </AnimatePresence>
         </div>
       </main>
+
+      {/* ── BOTTOM NAV mobile ── */}
+      {isMobile && (
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTop: `1px solid ${C.accent}`, display: 'flex', zIndex: 50, paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          {navItems.slice(0, 4).map(item => {
+            const Icon = item.icon;
+            const badge = item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : 0;
+            const active = activeNav === item.id;
+            return (
+              <button key={item.id} onClick={() => setActiveNav(item.id)}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 4px 8px', background: 'none', border: 'none', cursor: 'pointer', gap: '3px', position: 'relative' }}>
+                <div style={{ position: 'relative' }}>
+                  <Icon size={22} color={active ? C.primary : C.light} />
+                  {badge > 0 && (
+                    <div style={{ position: 'absolute', top: '-5px', right: '-7px', backgroundColor: C.primary, color: '#fff', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.6rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badge}</div>
+                  )}
+                </div>
+                <span style={{ fontSize: '0.65rem', fontWeight: active ? 700 : 500, color: active ? C.primary : C.light, fontFamily: SANS }}>{item.label.split(' ')[0]}</span>
+              </button>
+            );
+          })}
+          <button onClick={onGoHome}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 4px 8px', background: 'none', border: 'none', cursor: 'pointer', gap: '3px' }}>
+            <Home size={22} color={C.light} />
+            <span style={{ fontSize: '0.65rem', fontWeight: 500, color: C.light, fontFamily: SANS }}>Accueil</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
