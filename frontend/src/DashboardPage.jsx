@@ -43,15 +43,18 @@ const CardTitle = ({ children, action }) => (
   </div>
 );
 
-const StatCard = ({ icon: Icon, value, label, color = C.primary }) => (
-  <Card>
-    <div style={{ width: '48px', height: '48px', borderRadius: '14px', backgroundColor: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-      <Icon size={24} color={color} />
-    </div>
-    <div style={{ fontFamily: SERIF, fontSize: '2rem', fontWeight: 700, color: C.text, lineHeight: 1 }}>{value}</div>
-    <div style={{ fontSize: '0.88rem', color: C.light, marginTop: '4px', fontWeight: 600 }}>{label}</div>
-  </Card>
-);
+const StatCard = ({ icon: Icon, value, label, color = C.primary }) => {
+  const isMobile = useIsMobile();
+  return (
+    <Card style={{ padding: isMobile ? '14px' : '24px' }}>
+      <div style={{ width: isMobile ? '34px' : '48px', height: isMobile ? '34px' : '48px', borderRadius: '12px', backgroundColor: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMobile ? '8px' : '16px' }}>
+        <Icon size={isMobile ? 17 : 24} color={color} />
+      </div>
+      <div style={{ fontFamily: SERIF, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 700, color: C.text, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: '0.8rem', color: C.light, marginTop: '4px', fontWeight: 600, lineHeight: 1.3 }}>{label}</div>
+    </Card>
+  );
+};
 
 const NavItem = ({ icon: Icon, label, active, onClick, badge }) => (
   <motion.button onClick={onClick} whileHover={{ x: 3 }}
@@ -133,11 +136,12 @@ const DashboardEleve = ({ user, requests, onTuteurs }) => {
   const myReqs = requests;
   const confirmed = myReqs.filter(r => r.status === 'CONFIRMEE');
   const pending = myReqs.filter(r => r.status === 'EN_ATTENTE');
+  const isMobile = useIsMobile();
 
   return (
     <>
       {modal && <ContactModal data={modal} onClose={() => setModal(null)} />}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr', gap: isMobile ? '10px' : '20px' }}>
 
         <StatCard icon={Calendar} value={myReqs.length} label="Demandes envoyées" />
         <StatCard icon={CheckCircle2} value={confirmed.length} label="Suivis confirmés" color="#22C55E" />
@@ -145,7 +149,7 @@ const DashboardEleve = ({ user, requests, onTuteurs }) => {
         <StatCard icon={Users} value={new Set(confirmed.map(r => r.tuteurId)).size} label="Tuteurs actifs" color="#7C3AED" />
 
         {/* Mes demandes */}
-        <Card style={{ gridColumn: '1 / 3' }}>
+        <Card style={{ gridColumn: isMobile ? '1 / -1' : '1 / 3' }}>
           <CardTitle action={
             <motion.button whileHover={{ scale: 1.04 }} onClick={onTuteurs}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
@@ -167,9 +171,9 @@ const DashboardEleve = ({ user, requests, onTuteurs }) => {
                   <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: C.accent, display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: '22px' }}>📚</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, color: C.text, fontSize: '0.95rem' }}>{tuteurNom}</div>
-                    <div style={{ fontSize: '0.85rem', color: C.muted }}>{r.matiere} · {r.duree} · {(r.jours || []).join(', ')}</div>
+                    <div style={{ fontSize: '0.85rem', color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.matiere} · {r.duree} · {(r.jours || []).join(', ')}</div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
                     <StatusPill status={r.status} />
                     {r.status === 'CONFIRMEE' && r.tuteur && (
                       <motion.button whileTap={{ scale: 0.95 }}
@@ -192,7 +196,7 @@ const DashboardEleve = ({ user, requests, onTuteurs }) => {
         </Card>
 
         {/* Infos compte */}
-        <Card style={{ gridColumn: '3 / 5' }}>
+        <Card style={{ gridColumn: isMobile ? '1 / -1' : '3 / 5' }}>
           <CardTitle>Votre profil</CardTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {[
@@ -220,6 +224,7 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
   const myReqs = requests;
   const pending = myReqs.filter(r => r.status === 'EN_ATTENTE');
   const confirmed = myReqs.filter(r => r.status === 'CONFIRMEE');
+  const isMobile = useIsMobile();
 
   const accepter = async (req) => {
     await api.patch(`/requests/${req.id}`, { status: 'CONFIRMEE' }).catch(() => {});
@@ -241,7 +246,7 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
   return (
     <>
       {modal && <ContactModal data={modal} onClose={() => setModal(null)} />}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr', gap: isMobile ? '10px' : '20px' }}>
 
         <StatCard icon={Calendar} value={myReqs.length} label="Demandes reçues" />
         <StatCard icon={CheckCircle2} value={confirmed.length} label="Suivis confirmés" color="#22C55E" />
@@ -249,7 +254,7 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
         <StatCard icon={Users} value={new Set(confirmed.map(r => r.eleveId)).size} label="Élèves actifs" color="#7C3AED" />
 
         {/* Demandes */}
-        <Card style={{ gridColumn: '1 / 3' }}>
+        <Card style={{ gridColumn: isMobile ? '1 / -1' : '1 / 3' }}>
           <CardTitle>Demandes de suivi</CardTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {myReqs.length === 0 ? (
@@ -270,7 +275,7 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
                     <StatusPill status={r.status} />
                     {r.status === 'EN_ATTENTE' && (
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexDirection: isMobile ? 'column' : 'row' }}>
                         <motion.button whileTap={{ scale: 0.95 }} onClick={() => accepter(r)}
                           style={{ padding: '4px 10px', borderRadius: '100px', border: 'none', backgroundColor: '#DCFCE7', color: '#166534', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>Accepter</motion.button>
                         <motion.button whileTap={{ scale: 0.95 }} onClick={() => refuser(r)}
@@ -285,7 +290,7 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
         </Card>
 
         {/* Profil tuteur */}
-        <Card style={{ gridColumn: '3 / 5' }}>
+        <Card style={{ gridColumn: isMobile ? '1 / -1' : '3 / 5' }}>
           <CardTitle>Votre profil tuteur</CardTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {[
@@ -483,6 +488,7 @@ const MonProfil = ({ user, onUserUpdate }) => {
   };
 
   const cancel = () => { setForm({ ...user }); setEditing(false); };
+  const isMobile = useIsMobile();
   const isTuteur = user.role === 'tuteur' || user.role === 'TUTEUR';
 
   return (
@@ -550,12 +556,12 @@ const MonProfil = ({ user, onUserUpdate }) => {
         <CardTitle>Informations personnelles</CardTitle>
         {editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
               <FieldInput label="Prénom" value={form.prenom || ''} onChange={e => set('prenom', e.target.value)} />
               <FieldInput label="Nom" value={form.nom || ''} onChange={e => set('nom', e.target.value)} />
             </div>
             <FieldInput label="Email (non modifiable)" value={form.email || ''} readOnly />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
               <FieldInput label="Téléphone" value={form.tel || ''} onChange={e => set('tel', e.target.value)} placeholder="77 000 00 00" />
               <FieldInput label="WhatsApp" value={form.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} placeholder="Si différent du tél." />
             </div>
@@ -595,7 +601,7 @@ const MonProfil = ({ user, onUserUpdate }) => {
                   <textarea value={form.methodologie || ''} onChange={e => set('methodologie', e.target.value)} rows={2} placeholder="Ex : Cours structurés avec exercices pratiques et suivi hebdomadaire…"
                     style={{ width: '100%', padding: '11px 14px', borderRadius: '12px', border: `1.5px solid ${C.border || '#E9D5A0'}`, backgroundColor: C.surface, fontSize: '0.93rem', fontFamily: SANS, color: C.text, outline: 'none', resize: 'vertical', lineHeight: 1.55, boxSizing: 'border-box' }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                   <FieldSelect label="Diplôme" value={form.diplome || ''} onChange={e => set('diplome', e.target.value)} options={PF_DIPLOMES} placeholder="Votre diplôme" />
                   <FieldSelect label="Mode de cours" value={form.modeCours || ''} onChange={e => set('modeCours', e.target.value)} options={PF_MODES} placeholder="Mode préféré" />
                 </div>
@@ -625,7 +631,7 @@ const MonProfil = ({ user, onUserUpdate }) => {
               </>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                   <FieldSelect label="Niveau scolaire" value={form.niveau || ''} onChange={e => set('niveau', e.target.value)} options={PF_NIVEAUX_ELEVE} placeholder="Votre niveau" />
                   <FieldSelect label="Type de cours" value={form.typeCours || ''} onChange={e => set('typeCours', e.target.value)} options={PF_MODES} placeholder="Préférence" />
                 </div>
@@ -709,6 +715,7 @@ const PaiementsPanel = ({ user, requests }) => {
     catch { return { actifs: [], numeros: {} }; }
   });
   const [saved, setSaved] = useState(false);
+  const isMobile = useIsMobile();
   const isTuteur = user.role === 'tuteur' || user.role === 'TUTEUR';
 
   const toggle = (id) => setConfig(c => ({
@@ -746,7 +753,7 @@ const PaiementsPanel = ({ user, requests }) => {
       </AnimatePresence>
 
       {/* ─ Résumé ─ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
         <StatCard icon={Wallet} value={totalEstime > 0 ? `${totalEstime.toLocaleString('fr-FR')} F` : '—'} label={isTuteur ? 'Revenus estimés' : 'Budget engagé'} color={isTuteur ? '#16A34A' : C.primary} />
         <StatCard icon={Calendar} value={confirmedThisMonth.length} label="Confirmées ce mois" color={C.secondary} />
         <StatCard icon={CheckCircle2} value={confirmedReqs.length} label="Total confirmées" color="#7C3AED" />
@@ -978,6 +985,7 @@ const MessagesPanel = ({ currentUser }) => {
   const [search, setSearch] = useState('');
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const bottomRef = useRef(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     api.get('/messages').then(data => {
@@ -1026,11 +1034,14 @@ const MessagesPanel = ({ currentUser }) => {
     return nom.toLowerCase().includes(search.toLowerCase());
   });
 
+  const showList = !isMobile || activeId === null;
+  const showChat = !isMobile || activeId !== null;
+
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden', backgroundColor: C.surface, borderRadius: '20px', border: `1px solid ${C.accent}`, boxShadow: '0 4px 16px rgba(62,42,31,0.05)' }}>
 
       {/* ── Liste conversations ── */}
-      <div style={{ width: '300px', flexShrink: 0, borderRight: `1px solid ${C.accent}`, display: 'flex', flexDirection: 'column', backgroundColor: C.background }}>
+      {showList && <div style={{ width: isMobile ? '100%' : '300px', flexShrink: 0, borderRight: isMobile ? 'none' : `1px solid ${C.accent}`, display: 'flex', flexDirection: 'column', backgroundColor: C.background }}>
         <div style={{ padding: '20px 16px 12px', borderBottom: `1px solid ${C.accent}` }}>
           <h2 style={{ fontFamily: SERIF, fontSize: '1.1rem', color: C.text, margin: '0 0 12px', fontWeight: 700 }}>
             Messages
@@ -1084,15 +1095,18 @@ const MessagesPanel = ({ currentUser }) => {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* ── Fenêtre de chat ── */}
-      {activeConv ? (
+      {showChat && (activeConv ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
           {/* En-tête */}
-          <div style={{ padding: '14px 24px', borderBottom: `1px solid ${C.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surface, flexShrink: 0 }}>
+          <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surface, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {isMobile && (
+                <button onClick={() => setActiveId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.primary, fontSize: '1.1rem', padding: '4px 8px 4px 0', fontWeight: 700, fontFamily: SANS }}>←</button>
+              )}
               <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: C.accent, display: 'grid', placeItems: 'center', fontSize: '20px' }}>
                 {activeConv.contact?.role === 'TUTEUR' ? '👨🏾‍🏫' : '👩🏾‍🎓'}
               </div>
@@ -1170,7 +1184,7 @@ const MessagesPanel = ({ currentUser }) => {
           <MessageSquare size={44} color={C.accent} />
           <p style={{ fontFamily: SERIF, fontSize: '1.05rem', color: C.muted, margin: 0 }}>Sélectionnez une conversation</p>
         </div>
-      )}
+      ))}
     </div>
   );
 };
@@ -1217,7 +1231,7 @@ const NotifCenter = ({ user }) => {
       <AnimatePresence>
         {open && (
           <motion.div initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.97 }} transition={{ duration: 0.18 }}
-            style={{ position: 'absolute', top: '52px', right: 0, width: '360px', maxHeight: '480px', backgroundColor: C.surface, borderRadius: '20px', border: `1px solid ${C.accent}`, boxShadow: '0 16px 48px rgba(62,42,31,0.14)', overflow: 'hidden', display: 'flex', flexDirection: 'column', zIndex: 200 }}>
+            style={{ position: 'fixed', top: '68px', right: '12px', left: '12px', maxWidth: '360px', marginLeft: 'auto', maxHeight: '480px', backgroundColor: C.surface, borderRadius: '20px', border: `1px solid ${C.accent}`, boxShadow: '0 16px 48px rgba(62,42,31,0.14)', overflow: 'hidden', display: 'flex', flexDirection: 'column', zIndex: 200 }}>
 
             <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div style={{ fontFamily: SERIF, fontSize: '1.05rem', fontWeight: 700, color: C.text }}>
