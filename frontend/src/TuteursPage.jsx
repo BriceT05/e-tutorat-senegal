@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import useIsMobile from './useIsMobile';
 import api from './api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -227,6 +228,8 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
   const [mobileFilter, setMobileFilter] = useState(false);
   const [TUTEURS, setTUTEURS] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
+  const activeCount = (filters.matieres?.length || 0) + (filters.niveaux?.length || 0) + (filters.regions?.length || 0) + (filters.modes?.length || 0) + (filters.maxTarif < 10000 ? 1 : 0);
 
   useEffect(() => {
     api.get('/tuteurs')
@@ -259,23 +262,25 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
 
       {/* Navbar */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: 'rgba(255,253,245,0.95)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.accent}`, padding: '0 5%' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', height: '72px', display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.95rem', fontWeight: 600, flexShrink: 0 }}>
-            <ArrowLeft size={18} /> Accueil
+        <div style={{ maxWidth: '1400px', margin: '0 auto', minHeight: '64px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', padding: isMobile ? '10px 0' : '0' }}>
+          <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.9rem', fontWeight: 600, flexShrink: 0 }}>
+            <ArrowLeft size={16} /> Accueil
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-              <BookOpen size={20} color="#fff" />
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
+                <BookOpen size={20} color="#fff" />
+              </div>
+              <span style={{ fontFamily: SERIF, fontSize: '1.2rem', fontWeight: 900, color: C.text }}>e-Tutorat <span style={{ color: C.primary }}>SN</span></span>
             </div>
-            <span style={{ fontFamily: SERIF, fontSize: '1.2rem', fontWeight: 900, color: C.text }}>e-Tutorat <span style={{ color: C.primary }}>SN</span></span>
-          </div>
+          )}
 
           {/* Search bar */}
-          <div style={{ flex: 1, position: 'relative', maxWidth: '560px', margin: '0 auto' }}>
-            <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: C.light, pointerEvents: 'none' }} />
+          <div style={{ flex: 1, position: 'relative', width: isMobile ? '100%' : 'auto', maxWidth: isMobile ? '100%' : '560px', margin: isMobile ? '0' : '0 auto', order: isMobile ? 3 : 0 }}>
+            <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: C.light, pointerEvents: 'none' }} />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher un tuteur, une matière, une région…"
-              style={{ width: '100%', padding: '11px 16px 11px 44px', borderRadius: '100px', border: `2px solid ${C.border}`, backgroundColor: C.surface, fontSize: '0.95rem', color: C.text, outline: 'none', fontFamily: SANS, transition: 'border-color 0.2s' }}
+              placeholder={isMobile ? 'Rechercher…' : 'Rechercher un tuteur, une matière, une région…'}
+              style={{ width: '100%', padding: '10px 14px 10px 40px', borderRadius: '100px', border: `2px solid ${C.border}`, backgroundColor: C.surface, fontSize: '0.9rem', color: C.text, outline: 'none', fontFamily: SANS }}
               onFocus={e => e.target.style.borderColor = C.primary}
               onBlur={e => e.target.style.borderColor = C.border} />
             {search && (
@@ -285,13 +290,15 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <span style={{ fontSize: '0.85rem', color: C.light, fontWeight: 500 }}>Trier :</span>
-            <select value={sort} onChange={e => setSort(e.target.value)}
-              style={{ padding: '8px 32px 8px 12px', borderRadius: '100px', border: `2px solid ${C.border}`, backgroundColor: C.surface, fontSize: '0.9rem', fontWeight: 600, color: C.text, cursor: 'pointer', outline: 'none', fontFamily: SANS, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}>
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.85rem', color: C.light, fontWeight: 500 }}>Trier :</span>
+              <select value={sort} onChange={e => setSort(e.target.value)}
+                style={{ padding: '8px 32px 8px 12px', borderRadius: '100px', border: `2px solid ${C.border}`, backgroundColor: C.surface, fontSize: '0.9rem', fontWeight: 600, color: C.text, cursor: 'pointer', outline: 'none', fontFamily: SANS, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}>
+                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -323,10 +330,23 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '36px 5% 80px', display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', alignItems: 'start' }}>
-        <Sidebar filters={filters} setFilters={setFilters} count={filtered.length} />
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '16px 5% 100px' : '36px 5% 80px', display: isMobile ? 'block' : 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', alignItems: 'start' }}>
+        {!isMobile && <Sidebar filters={filters} setFilters={setFilters} count={filtered.length} />}
 
         <div>
+          {/* Barre filtre + tri mobile */}
+          {isMobile && (
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+              <motion.button onClick={() => setMobileFilter(true)} whileTap={{ scale: 0.97 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '100px', border: `2px solid ${activeCount > 0 ? C.primary : C.border}`, backgroundColor: activeCount > 0 ? C.accent : C.surface, color: activeCount > 0 ? C.primary : C.muted, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS, flexShrink: 0 }}>
+                <SlidersHorizontal size={16} /> Filtres{activeCount > 0 ? ` (${activeCount})` : ''}
+              </motion.button>
+              <select value={sort} onChange={e => setSort(e.target.value)}
+                style={{ flex: 1, padding: '10px 32px 10px 14px', borderRadius: '100px', border: `2px solid ${C.border}`, backgroundColor: C.surface, fontSize: '0.88rem', fontWeight: 600, color: C.text, cursor: 'pointer', outline: 'none', fontFamily: SANS, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}>
+                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
           <AnimatePresence mode="popLayout">
             {loading ? (
               <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -362,6 +382,30 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Drawer filtre mobile */}
+      <AnimatePresence>
+        {isMobile && mobileFilter && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setMobileFilter(false)}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(62,42,31,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={e => e.stopPropagation()}
+              style={{ width: '100%', maxHeight: '85vh', backgroundColor: C.surface, borderRadius: '24px 24px 0 0', overflowY: 'auto', padding: '20px 20px 32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ fontFamily: SERIF, fontSize: '1.2rem', color: C.text, margin: 0, fontWeight: 700 }}>Filtres</h3>
+                <button onClick={() => setMobileFilter(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.light, padding: '4px' }}><X size={22} /></button>
+              </div>
+              <Sidebar filters={filters} setFilters={setFilters} count={filtered.length} />
+              <motion.button onClick={() => setMobileFilter(false)} whileTap={{ scale: 0.97 }}
+                style={{ width: '100%', marginTop: '20px', padding: '15px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: SANS }}>
+                Voir {filtered.length} tuteur{filtered.length > 1 ? 's' : ''}
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom stripe */}
       <div style={{ display: 'flex', height: '6px' }}>

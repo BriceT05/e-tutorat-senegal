@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useIsMobile from './useIsMobile';
 import api from './api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -298,6 +299,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
   const [modal, setModal] = useState(false);
   const [toast, setToast] = useState(false);
   const [fav, setFav] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleConfirm = async (requestData) => {
     if (currentUser) {
@@ -333,19 +335,21 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
             </div>
             <span style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 900, color: C.text }}>e-Tutorat <span style={{ color: C.primary }}>SN</span></span>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
             <button onClick={() => setFav(f => !f)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '100px', border: `1.5px solid ${fav ? C.primary : C.border}`, backgroundColor: fav ? C.accent : 'transparent', color: fav ? C.primary : C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>
-              <Heart size={16} fill={fav ? C.primary : 'transparent'} /> {fav ? 'Favori' : 'Ajouter'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: isMobile ? '8px' : '8px 16px', borderRadius: '100px', border: `1.5px solid ${fav ? C.primary : C.border}`, backgroundColor: fav ? C.accent : 'transparent', color: fav ? C.primary : C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>
+              <Heart size={16} fill={fav ? C.primary : 'transparent'} /> {!isMobile && (fav ? 'Favori' : 'Ajouter')}
             </button>
-            <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '100px', border: `1.5px solid ${C.border}`, backgroundColor: 'transparent', color: C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>
-              <Share2 size={16} /> Partager
-            </button>
+            {!isMobile && (
+              <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '100px', border: `1.5px solid ${C.border}`, backgroundColor: 'transparent', color: C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>
+                <Share2 size={16} /> Partager
+              </button>
+            )}
           </div>
         </div>
       </nav>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 5% 100px', display: 'grid', gridTemplateColumns: '1fr 360px', gap: '40px', alignItems: 'start' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '16px 5% 100px' : '40px 5% 100px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: isMobile ? '20px' : '40px', alignItems: 'start' }}>
 
         {/* ── COLONNE GAUCHE ── */}
         <div>
@@ -391,7 +395,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${C.accent}` }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${C.accent}` }}>
               {[
                 { icon: Star,     value: tuteur.noteAvg   ? tuteur.noteAvg.toFixed(1) : '—',          label: 'Note moyenne' },
                 { icon: Users,    value: tuteur.totalEleves ?? 0,                                        label: 'Élèves' },
@@ -597,7 +601,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
         </div>
 
         {/* ── SIDEBAR DROITE ── */}
-        <div style={{ position: 'sticky', top: '88px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ position: isMobile ? 'static' : 'sticky', top: '88px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Booking card */}
           <div style={{ backgroundColor: C.surface, borderRadius: '24px', padding: '28px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.08)' }}>
@@ -624,10 +628,12 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
               ))}
             </div>
 
-            <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModal(true); }} whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
-              style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(249,115,22,0.35)', fontFamily: SANS }}>
-              <Calendar size={20} /> Demander un suivi
-            </motion.button>
+            {!isMobile && (
+              <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModal(true); }} whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
+                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(249,115,22,0.35)', fontFamily: SANS }}>
+                <Calendar size={20} /> Demander un suivi
+              </motion.button>
+            )}
           </div>
 
           {/* Trust */}
@@ -642,6 +648,20 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
           </div>
         </div>
       </div>
+
+      {/* CTA sticky mobile */}
+      {isMobile && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 16px', backgroundColor: C.surface, borderTop: `1px solid ${C.accent}`, boxShadow: '0 -4px 20px rgba(62,42,31,0.1)', zIndex: 90, display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: '1.2rem', color: C.text }}>{tuteur.tarif.toLocaleString('fr-FR')} <span style={{ fontWeight: 500, fontSize: '0.85rem', color: C.light }}>FCFA/h</span></div>
+            <div style={{ fontSize: '0.78rem', color: C.light }}>Répond en {tuteur.delaiReponse}</div>
+          </div>
+          <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModal(true); }} whileTap={{ scale: 0.97 }}
+            style={{ padding: '14px 24px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 6px 20px rgba(249,115,22,0.35)', fontFamily: SANS }}>
+            <Calendar size={18} /> Demander un suivi
+          </motion.button>
+        </div>
+      )}
 
       {/* Modal */}
       <AnimatePresence>
