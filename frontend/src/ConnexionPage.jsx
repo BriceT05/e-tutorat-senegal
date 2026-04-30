@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useIsMobile from './useIsMobile';
 import { motion } from 'framer-motion';
 import api from './api';
 import { BookOpen, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, X, CheckCircle, AlertCircle } from 'lucide-react';
@@ -119,6 +120,7 @@ const ForgotModal = ({ onClose }) => {
 };
 
 export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
+  const isMobile = useIsMobile();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
@@ -171,9 +173,9 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
           </div>
         </div>
-        <div style={{ fontSize: '0.95rem', color: C.light }}>
-          Pas encore inscrit ?{' '}
-          <span onClick={onInscription} style={{ color: C.primary, fontWeight: 700, cursor: 'pointer' }}>S'inscrire</span>
+        <div style={{ fontSize: isMobile ? '0.82rem' : '0.95rem', color: C.light }}>
+          {!isMobile && 'Pas encore inscrit ? '}
+          <span onClick={onInscription} style={{ color: C.primary, fontWeight: 700, cursor: 'pointer' }}>{isMobile ? 'S\'inscrire' : 'S\'inscrire'}</span>
         </div>
       </header>
 
@@ -183,14 +185,14 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
           style={{ width: '100%', maxWidth: '480px' }}>
 
           {/* Card */}
-          <div style={{ backgroundColor: C.surface, borderRadius: '32px', padding: '52px 48px', boxShadow: '0 8px 48px rgba(62,42,31,0.08)', border: `1px solid ${C.accent}`, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: C.surface, borderRadius: isMobile ? '20px' : '32px', padding: isMobile ? '32px 20px' : '52px 48px', boxShadow: '0 8px 48px rgba(62,42,31,0.08)', border: `1px solid ${C.accent}`, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />
 
             <div style={{ textAlign: 'center', marginBottom: '36px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '20px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 8px 20px rgba(249,115,22,0.18)' }}>
                 <BookOpen size={32} color={C.primary} />
               </div>
-              <h1 style={{ fontFamily: SERIF, fontSize: '2.2rem', color: C.text, margin: '0 0 8px', fontWeight: 700 }}>
+              <h1 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.8rem' : '2.2rem', color: C.text, margin: '0 0 8px', fontWeight: 700 }}>
                 Bon retour <span style={{ color: C.primary, fontStyle: 'italic' }}>!</span>
               </h1>
               <p style={{ color: C.muted, fontSize: '1.05rem', margin: 0, lineHeight: 1.5 }}>
