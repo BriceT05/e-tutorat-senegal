@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useIsMobile from './useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from './api';
 import {
@@ -97,8 +98,10 @@ const SelectField = ({ icon: Icon, label, required, value, onChange, options, pl
   </Field>
 );
 
-const MatieresGrid = ({ selected, toggle }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+const MatieresGrid = ({ selected, toggle }) => {
+  const isMobile = useIsMobile();
+  return (
+  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '10px' }}>
     {MATIERES.map(m => {
       const active = selected.includes(m);
       return (
@@ -116,7 +119,8 @@ const MatieresGrid = ({ selected, toggle }) => (
       );
     })}
   </div>
-);
+  );
+};
 
 const PasswordInput = ({ label, required, value, onChange, error, placeholder }) => {
   const [show, setShow] = useState(false);
@@ -140,35 +144,38 @@ const PasswordInput = ({ label, required, value, onChange, error, placeholder })
 // ─── Stepper ──────────────────────────────────────────────────────────────────
 const STEPS_LABELS = ['Profil', 'Infos personnelles', 'Détails', 'Confirmation'];
 
-const Stepper = ({ step }) => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0', marginBottom: '48px' }}>
-    {STEPS_LABELS.map((label, i) => {
-      const idx = i + 1;
-      const done = step > idx;
-      const active = step === idx;
-      return (
-        <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: '1rem', fontFamily: SANS, transition: 'all 0.3s',
-              backgroundColor: done || active ? C.primary : C.accent,
-              color: done || active ? '#fff' : C.light,
-              boxShadow: active ? `0 8px 20px rgba(249,115,22,0.35)` : 'none',
-              border: `3px solid ${done || active ? C.primary : C.border}`,
-            }}>
-              {done ? <Check size={20} /> : idx}
+const Stepper = ({ step }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0', marginBottom: '36px' }}>
+      {STEPS_LABELS.map((label, i) => {
+        const idx = i + 1;
+        const done = step > idx;
+        const active = step === idx;
+        return (
+          <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: isMobile ? '36px' : '44px', height: isMobile ? '36px' : '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 800, fontSize: isMobile ? '0.85rem' : '1rem', fontFamily: SANS, transition: 'all 0.3s',
+                backgroundColor: done || active ? C.primary : C.accent,
+                color: done || active ? '#fff' : C.light,
+                boxShadow: active ? `0 8px 20px rgba(249,115,22,0.35)` : 'none',
+                border: `3px solid ${done || active ? C.primary : C.border}`,
+              }}>
+                {done ? <Check size={isMobile ? 16 : 20} /> : idx}
+              </div>
+              {!isMobile && <span style={{ fontSize: '0.78rem', fontWeight: active ? 700 : 500, color: active ? C.primary : C.light, fontFamily: SANS, whiteSpace: 'nowrap' }}>{label}</span>}
             </div>
-            <span style={{ fontSize: '0.78rem', fontWeight: active ? 700 : 500, color: active ? C.primary : C.light, fontFamily: SANS, whiteSpace: 'nowrap' }}>{label}</span>
+            {i < STEPS_LABELS.length - 1 && (
+              <div style={{ width: isMobile ? '40px' : '80px', height: '2px', backgroundColor: step > idx ? C.primary : C.border, margin: isMobile ? '0 2px' : '0 4px', marginBottom: isMobile ? 0 : '26px', transition: 'background-color 0.3s' }} />
+            )}
           </div>
-          {i < STEPS_LABELS.length - 1 && (
-            <div style={{ width: '80px', height: '2px', backgroundColor: step > idx ? C.primary : C.border, margin: '0 4px', marginBottom: '26px', transition: 'background-color 0.3s' }} />
-          )}
-        </div>
-      );
-    })}
-  </div>
-);
+        );
+      })}
+    </div>
+  );
+};
 
 // ─── ÉTAPE 1 — Choix du profil ───────────────────────────────────────────────
 const Step1 = ({ role, setRole }) => (
@@ -211,16 +218,18 @@ const Step1 = ({ role, setRole }) => (
 );
 
 // ─── ÉTAPE 2 — Infos personnelles ────────────────────────────────────────────
-const Step2 = ({ data, set, errors }) => (
+const Step2 = ({ data, set, errors }) => {
+  const isMobile = useIsMobile();
+  return (
   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
     <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-      <h2 style={{ fontFamily: SERIF, fontSize: '2.2rem', color: C.text, margin: '0 0 10px', fontWeight: 700 }}>
+      <h2 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.8rem' : '2.2rem', color: C.text, margin: '0 0 10px', fontWeight: 700 }}>
         Vos <span style={{ color: C.primary, fontStyle: 'italic' }}>informations</span>
       </h2>
       <p style={{ fontSize: '1.05rem', color: C.muted, fontFamily: SANS }}>Ces informations restent confidentielles.</p>
     </div>
 
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
       <InputField icon={User} label="Prénom" required value={data.prenom} onChange={e => set('prenom', e.target.value)} placeholder="Moussa" error={errors.prenom} />
       <InputField icon={User} label="Nom de famille" required value={data.nom} onChange={e => set('nom', e.target.value)} placeholder="Diallo" error={errors.nom} />
       <InputField icon={Mail} label="Adresse email" required type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="moussa@email.com" error={errors.email} />
@@ -246,7 +255,8 @@ const Step2 = ({ data, set, errors }) => (
       </div>
     )}
   </motion.div>
-);
+  );
+};
 
 // sub-component to avoid duplicate declaration
 const PasswordField = ({ label, required, value, onChange, error, placeholder }) => {
@@ -270,6 +280,7 @@ const PasswordField = ({ label, required, value, onChange, error, placeholder })
 
 // ─── ÉTAPE 3A — Profil Élève / Parent ────────────────────────────────────────
 const Step3Eleve = ({ data, set, errors }) => {
+  const isMobile = useIsMobile();
   const toggle = (m) => {
     const cur = data.matieres || [];
     set('matieres', cur.includes(m) ? cur.filter(x => x !== m) : [...cur, m]);
@@ -278,14 +289,14 @@ const Step3Eleve = ({ data, set, errors }) => {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
       <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: '2.2rem', color: C.text, margin: '0 0 10px', fontWeight: 700 }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.8rem' : '2.2rem', color: C.text, margin: '0 0 10px', fontWeight: 700 }}>
           Votre <span style={{ color: C.primary, fontStyle: 'italic' }}>profil élève</span>
         </h2>
         <p style={{ fontSize: '1.05rem', color: C.muted, fontFamily: SANS }}>Ces informations nous aident à vous proposer les meilleurs tuteurs.</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
           <SelectField icon={GraduationCap} label="Niveau scolaire" required value={data.niveau || ''} onChange={e => set('niveau', e.target.value)} options={NIVEAUX} placeholder="Choisir un niveau" error={errors.niveau} />
           <SelectField icon={MapPin} label="Région" required value={data.region || ''} onChange={e => set('region', e.target.value)} options={REGIONS} placeholder="Votre région" error={errors.region} />
         </div>
@@ -299,7 +310,7 @@ const Step3Eleve = ({ data, set, errors }) => {
           {errors.matieres && <span style={{ fontSize: '0.82rem', color: C.error, fontWeight: 600, marginTop: '6px', display: 'block' }}>{errors.matieres}</span>}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
           <SelectField icon={Users} label="Type de cours" value={data.typeCours || ''} onChange={e => set('typeCours', e.target.value)} options={['En ligne', 'À domicile', 'Les deux']} placeholder="Préférence" />
           <SelectField label="Budget mensuel" value={data.budget || ''} onChange={e => set('budget', e.target.value)} options={['Moins de 20 000 FCFA', '20 000 – 50 000 FCFA', '50 000 – 100 000 FCFA', 'Plus de 100 000 FCFA']} placeholder="Votre budget" />
         </div>
@@ -310,6 +321,7 @@ const Step3Eleve = ({ data, set, errors }) => {
 
 // ─── ÉTAPE 3B — Profil Tuteur ─────────────────────────────────────────────────
 const Step3Tuteur = ({ data, set, errors }) => {
+  const isMobile = useIsMobile();
   const toggleMatiere = (m) => {
     const cur = data.matieres || [];
     set('matieres', cur.includes(m) ? cur.filter(x => x !== m) : [...cur, m]);
@@ -322,14 +334,14 @@ const Step3Tuteur = ({ data, set, errors }) => {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
       <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: '2.2rem', color: C.text, margin: '0 0 10px', fontWeight: 700 }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.8rem' : '2.2rem', color: C.text, margin: '0 0 10px', fontWeight: 700 }}>
           Votre <span style={{ color: C.primary, fontStyle: 'italic' }}>profil tuteur</span>
         </h2>
         <p style={{ fontSize: '1.05rem', color: C.muted, fontFamily: SANS }}>Présentez vos compétences pour attirer les meilleurs élèves.</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
           <SelectField icon={FileText} label="Diplôme le plus élevé" required value={data.diplome || ''} onChange={e => set('diplome', e.target.value)} options={DIPLOMES} placeholder="Votre diplôme" error={errors.diplome} />
           <SelectField icon={MapPin} label="Région" required value={data.region || ''} onChange={e => set('region', e.target.value)} options={REGIONS} placeholder="Votre région" error={errors.region} />
         </div>
@@ -361,7 +373,7 @@ const Step3Tuteur = ({ data, set, errors }) => {
           {errors.niveaux && <span style={{ fontSize: '0.82rem', color: C.error, fontWeight: 600, marginTop: '6px', display: 'block' }}>{errors.niveaux}</span>}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
           <InputField icon={Star} label="Tarif horaire (FCFA)" value={data.tarif || ''} onChange={e => set('tarif', e.target.value)} placeholder="ex: 5000" type="number" />
           <SelectField label="Mode de cours" value={data.modeCours || ''} onChange={e => set('modeCours', e.target.value)} options={['En ligne', 'À domicile', 'Les deux']} placeholder="Mode préféré" />
         </div>
@@ -448,6 +460,7 @@ const validate = (step, role, info, profile) => {
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) {
+  const isMobile = useIsMobile();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(null);
   const [info, setInfo] = useState({ prenom: '', nom: '', email: '', tel: '', password: '', confirm: '' });
@@ -511,8 +524,8 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
 
       {/* Header */}
       <header style={{ position: 'relative', zIndex: 10, padding: '24px 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.accent}`, backgroundColor: 'rgba(255,253,245,0.8)', backdropFilter: 'blur(12px)' }}>
-        <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '1rem', fontWeight: 600, fontFamily: SANS }}>
-          <ArrowLeft size={20} /> Retour à l'accueil
+        <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: isMobile ? '0.85rem' : '1rem', fontWeight: 600, fontFamily: SANS }}>
+          <ArrowLeft size={18} /> {!isMobile && 'Retour à l\'accueil'}
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -525,18 +538,18 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
           </div>
         </div>
 
-        <div style={{ fontSize: '0.95rem', color: C.light, fontFamily: SANS }}>
-          Déjà inscrit ?{' '}
-          <span style={{ color: C.primary, fontWeight: 700, cursor: 'pointer' }} onClick={onGoConnexion}>Se connecter</span>
+        <div style={{ fontSize: isMobile ? '0.82rem' : '0.95rem', color: C.light, fontFamily: SANS }}>
+          {!isMobile && 'Déjà inscrit ? '}
+          <span style={{ color: C.primary, fontWeight: 700, cursor: 'pointer' }} onClick={onGoConnexion}>{isMobile ? 'Connexion' : 'Se connecter'}</span>
         </div>
       </header>
 
       {/* Main content */}
-      <main style={{ position: 'relative', zIndex: 5, maxWidth: '780px', margin: '0 auto', padding: '60px 24px 100px' }}>
+      <main style={{ position: 'relative', zIndex: 5, maxWidth: '780px', margin: '0 auto', padding: isMobile ? '28px 16px 100px' : '60px 24px 100px' }}>
 
         {step < 4 && <Stepper step={step} />}
 
-        <div style={{ backgroundColor: step < 4 ? C.surface : 'transparent', borderRadius: '32px', padding: step < 4 ? '52px 56px' : '0', boxShadow: step < 4 ? '0 8px 48px rgba(62,42,31,0.08)' : 'none', border: step < 4 ? `1px solid ${C.accent}` : 'none', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: step < 4 ? C.surface : 'transparent', borderRadius: isMobile ? '20px' : '32px', padding: step < 4 ? (isMobile ? '28px 20px' : '52px 56px') : '0', boxShadow: step < 4 ? '0 8px 48px rgba(62,42,31,0.08)' : 'none', border: step < 4 ? `1px solid ${C.accent}` : 'none', position: 'relative', overflow: 'hidden' }}>
           {step < 4 && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />}
 
           <AnimatePresence mode="wait">

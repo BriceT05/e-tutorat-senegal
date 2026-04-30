@@ -293,7 +293,7 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section style={{ position: 'relative', backgroundColor: C.background, padding: '100px 5%', overflow: 'hidden', fontFamily: SANS }}>
+    <section style={{ position: 'relative', backgroundColor: C.background, padding: isMobile ? '60px 5%' : '100px 5%', overflow: 'hidden', fontFamily: SANS }}>
       <GeoPatter opacity={0.03} />
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         <FadeIn style={{ textAlign: 'center', marginBottom: '72px' }}>
@@ -480,8 +480,10 @@ const Testimonials = () => {
 };
 
 // ─── 7. BANDEAU CTA ──────────────────────────────────────────────────────────
-const CtaBanner = ({ onInscription }) => (
-  <section style={{ position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${C.primary} 0%, #EA580C 50%, #F59E0B 100%)`, padding: '100px 5%', fontFamily: SANS }}>
+const CtaBanner = ({ onInscription }) => {
+  const isMobile = useIsMobile();
+  return (
+  <section style={{ position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${C.primary} 0%, #EA580C 50%, #F59E0B 100%)`, padding: isMobile ? '60px 5%' : '100px 5%', fontFamily: SANS }}>
     <GeoPatter opacity={0.08} />
     <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '50vw', height: '50vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 65%)', filter: 'blur(40px)' }} />
 
@@ -514,7 +516,8 @@ const CtaBanner = ({ onInscription }) => (
       </div>
     </FadeIn>
   </section>
-);
+  );
+};
 
 // ─── 8. FOOTER ───────────────────────────────────────────────────────────────
 const Footer = ({ onLegal }) => {
