@@ -1,0 +1,56 @@
+{
+  "env": {
+    "API_KEY": "gd_scIYnEhpMU4-g04qsMwXKbzjy5Hn9ZRN"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python -m markitdown \"C:\\\\Users\\\\Fabrice\\\\Downloads\\\\eTutorat_Senegal_V1_Presentation \\(2\\) \\(1\\).pptx\")",
+      "Bash(pip install *)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "mcp__gemini-design__create_frontend",
+      "Bash(xargs grep *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(list\\(d.keys\\(\\)\\), indent=2\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if 'mcp' in k.lower\\(\\) or 'plugin' in k.lower\\(\\)}, indent=2\\)\\)\")",
+      "Bash(python3 *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('face'\\) || k.toLowerCase\\(\\).includes\\('twitter'\\) || k.toLowerCase\\(\\).includes\\('instagram'\\) || k.toLowerCase\\(\\).includes\\('social'\\)\\)\\)\")",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => !k.startsWith\\('Lucide'\\) && !k.endsWith\\('Icon'\\)\\).sort\\(\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(curl *)",
+      "Bash(npm init *)",
+      "Bash(grep -E \"^\\(express|bcrypt|jsonweb|cors|dotenv|prisma\\)$\")",
+      "Bash(node *)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "Bash(npx prisma *)",
+      "Bash(python -m json.tool)",
+      "Bash(pkill -f \"node src/index.js\")",
+      "Bash(node src/index.js)",
+      "Read(//tmp/**)",
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "Bash(taskkill /PID 12092 /F)",
+      "Bash(taskkill /PID 29500 /F)",
+      "Bash(taskkill /PID 12840 /F)",
+      "Bash(taskkill /PID 23080 /F)",
+      "Bash(taskkill /PID 25832 /F)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Get-Process *)",
+      "Bash(cmd /c \"for /f \\\\\"tokens=5\\\\\" %a in \\('netstat -ano ^| findstr :3001 ^| findstr LISTENING'\\) do taskkill /PID %a /F\")",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(DIRECT_URL=\"postgresql://postgres.kaswaniznskuwgwkttsa:Etutorat2026@aws-0-eu-west-1.pooler.supabase.com:5432/postgres\" npx prisma db push)",
+      "mcp__supabase__execute_sql",
+      "Bash(python -c \"import sys,json; t=json.load\\(sys.stdin\\); [print\\(f' {x[\\\\\"prenom\\\\\"]} {x[\\\\\"nom\\\\\"]} — {x[\\\\\"tarif\\\\\"]} FCFA — {x[\\\\\"noteAvg\\\\\"]}★'\\) for x in t]\")",
+      "Bash(npx vite *)",
+      "Bash(python -c \"import sys,json; rs=json.load\\(sys.stdin\\); [print\\(f' {r[\\\\\"matiere\\\\\"]} → {r[\\\\\"tuteur\\\\\"][\\\\\"prenom\\\\\"]} {r[\\\\\"tuteur\\\\\"][\\\\\"nom\\\\\"]} [{r[\\\\\"status\\\\\"]}]'\\) for r in rs]\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres.kaswaniznskuwgwkttsa:Etutorat2026@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\" DIRECT_URL=\"postgresql://postgres.kaswaniznskuwgwkttsa:Etutorat2026@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true\" npx prisma db push)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}
