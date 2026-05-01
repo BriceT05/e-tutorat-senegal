@@ -1,5 +1,6 @@
 import './index.css'
-import { StrictMode, useState } from 'react'
+import { StrictMode, useState, useEffect } from 'react'
+import api from './api.js'
 import { createRoot } from 'react-dom/client'
 import HomePage from './HomePage.jsx'
 import InscriptionPage from './InscriptionPage.jsx'
@@ -31,6 +32,9 @@ const getVerifyToken = () => {
 }
 
 function App() {
+  // Pré-chauffe le backend Render dès le chargement de l'app
+  useEffect(() => { api.get('/health').catch(() => {}) }, [])
+
   const [page, setPage] = useState('home')
   const [legalTab, setLegalTab] = useState('cgu')
   const [currentUser, setCurrentUser] = useState(getStoredUser)

@@ -126,6 +126,7 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
   const [show, setShow] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [slowLoading, setSlowLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
 
   const focus = e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)'; };
@@ -138,6 +139,7 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
     if (!password) errs.password = 'Mot de passe requis';
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
+    const slowTimer = setTimeout(() => setSlowLoading(true), 5000);
     try {
       const data = await api.post('/auth/login', { email, password });
       if (data.error) {
@@ -148,7 +150,9 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
     } catch {
       setErrors({ email: 'Erreur de connexion. Réessayez.' });
     } finally {
+      clearTimeout(slowTimer);
       setLoading(false);
+      setSlowLoading(false);
     }
   };
 
@@ -200,13 +204,11 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
               </p>
             </div>
 
-            {/* Social login */}
-            <button style={{ width: '100%', padding: '14px', borderRadius: '14px', border: `2px solid ${C.border}`, background: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: C.text, fontFamily: SANS, marginBottom: '24px', transition: 'border-color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = C.primary}
-              onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+            {/* Social login - Google OAuth non encore disponible */}
+            <div style={{ width: '100%', padding: '14px', borderRadius: '14px', border: `2px solid ${C.border}`, background: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '1rem', fontWeight: 600, color: C.light, fontFamily: SANS, marginBottom: '24px', opacity: 0.6, cursor: 'not-allowed', position: 'relative' }}>
               <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.6 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.6-8 19.6-20 0-1.3-.1-2.7-.4-4z" /><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4c-7.7 0-14.4 4.4-17.7 10.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.5 35.6 26.9 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.6 39.6 16.3 44 24 44z" /><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.7-2.7 4.9-5.1 6.4l6.2 5.2C40.4 36.5 44 30.7 44 24c0-1.3-.1-2.7-.4-4z" /></svg>
-              Continuer avec Google
-            </button>
+              Google — Bientôt disponible
+            </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
               <div style={{ flex: 1, height: '1px', backgroundColor: C.border }} />
@@ -262,7 +264,12 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
                 disabled={loading}
                 style={{ padding: '16px', borderRadius: '14px', border: 'none', backgroundColor: loading ? C.border : C.primary, color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: loading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: loading ? 'none' : '0 10px 25px rgba(249,115,22,0.35)', fontFamily: SANS, transition: 'all 0.2s', marginTop: '4px' }}>
                 {loading ? (
-                  <><div style={{ width: '22px', height: '22px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Connexion…</>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '22px', height: '22px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Connexion…
+                    </div>
+                    {slowLoading && <span style={{ fontSize: '0.78rem', opacity: 0.85, fontWeight: 500 }}>Le serveur démarre, encore quelques secondes…</span>}
+                  </div>
                 ) : (
                   <>Se connecter <ArrowRight size={20} /></>
                 )}

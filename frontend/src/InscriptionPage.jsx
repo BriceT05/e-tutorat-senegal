@@ -476,6 +476,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
   const [savedUser, setSavedUser] = useState(null);
   const [savedToken, setSavedToken] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [slowLoading, setSlowLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
   const setI = (k, v) => { setInfo(p => ({ ...p, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); };
@@ -489,6 +490,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
     if (step === 3) {
       setLoading(true);
       setSubmitError(null);
+      const slowTimer = setTimeout(() => setSlowLoading(true), 5000);
       try {
         const body = {
           prenom: info.prenom, nom: info.nom, email: info.email,
@@ -509,7 +511,9 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
         setSubmitError('Erreur de connexion au serveur. Réessayez.');
         return;
       } finally {
+        clearTimeout(slowTimer);
         setLoading(false);
+        setSlowLoading(false);
       }
     }
 
@@ -580,7 +584,12 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
               <motion.button onClick={next} disabled={loading} whileHover={canNext && !loading ? { scale: 1.03, y: -2 } : {}} whileTap={canNext && !loading ? { scale: 0.97 } : {}}
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 32px', borderRadius: '100px', border: 'none', backgroundColor: canNext && !loading ? C.primary : C.border, color: '#fff', fontSize: '1.05rem', fontWeight: 700, cursor: canNext && !loading ? 'pointer' : 'default', boxShadow: canNext && !loading ? '0 10px 25px rgba(249,115,22,0.35)' : 'none', fontFamily: SANS, transition: 'all 0.2s' }}>
                 {step === 3 && loading
-                  ? <><div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Création…</>
+                  ? <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Création…
+                      </div>
+                      {slowLoading && <span style={{ fontSize: '0.78rem', opacity: 0.85, fontWeight: 500 }}>Le serveur démarre, encore quelques secondes…</span>}
+                    </div>
                   : <>{step === 3 ? 'Créer mon compte' : 'Continuer'} <ArrowRight size={20} /></>
                 }
               </motion.button>
