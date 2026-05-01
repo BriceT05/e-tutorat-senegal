@@ -129,8 +129,48 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
   const [slowLoading, setSlowLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
 
+  // ─── OTP state ───────────────────────────────────────────────────────────────
+  const [otpMode, setOtpMode] = useState(false);       // panneau OTP ouvert
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);        // code envoyé
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(0);  // secondes avant renvoyer
+
   const focus = e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)'; };
   const blur = (err) => e => { e.target.style.borderColor = err ? C.error : C.border; e.target.style.boxShadow = 'none'; };
+
+  // ─── OTP handlers ────────────────────────────────────────────────────────────
+  const startCountdown = (s = 60) => {
+    setOtpCountdown(s);
+    const iv = setInterval(() => setOtpCountdown(c => { if (c <= 1) { clearInterval(iv); return 0; } return c - 1; }), 1000);
+  };
+
+  const sendOtp = async () => {
+    if (!otpEmail || !/\S+@\S+\.\S+/.test(otpEmail)) {
+      setOtpError('Email invalide'); return;
+    }
+    setOtpLoading(true); setOtpError('');
+    try {
+      const data = await api.post('/auth/otp/send', { email: otpEmail });
+      if (data.error) { setOtpError(data.error); return; }
+      setOtpSent(true);
+      startCountdown(60);
+    } catch { setOtpError('Erreur de connexion. Réessayez.'); }
+    finally { setOtpLoading(false); }
+  };
+
+  const verifyOtp = async () => {
+    if (!otpCode || otpCode.length !== 6) { setOtpError('Code à 6 chiffres requis'); return; }
+    setOtpLoading(true); setOtpError('');
+    try {
+      const data = await api.post('/auth/otp/verify', { email: otpEmail, code: otpCode });
+      if (data.error) { setOtpError(data.error); return; }
+      onSuccess?.(data.token, data.user);
+    } catch { setOtpError('Erreur de connexion. Réessayez.'); }
+    finally { setOtpLoading(false); }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -275,6 +315,76 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
                 )}
               </motion.button>
             </form>
+
+            {/* ─── Séparateur OTP ─── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '28px 0 0' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: C.border }} />
+              <span style={{ fontSize: '0.82rem', color: C.light, fontWeight: 500, whiteSpace: 'nowrap' }}>ou sans mot de passe</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: C.border }} />
+            </div>
+
+            {!otpMode ? (
+              <button onClick={() => { setOtpMode(true); setOtpEmail(email); }}
+                style={{ width: '100%', marginTop: '16px', padding: '13px', borderRadius: '14px', border: `2px solid ${C.border}`, background: 'transparent', color: C.muted, fontWeight: 700, fontSize: '0.97rem', cursor: 'pointer', fontFamily: SANS, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'border-color 0.2s, color 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.primary; e.currentTarget.style.color = C.primary; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
+                <Mail size={17} /> Recevoir un code par email
+              </button>
+            ) : (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                style={{ marginTop: '16px', padding: '20px', borderRadius: '16px', border: `2px solid ${C.primary}`, background: '#FFF7ED' }}>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <span style={{ fontWeight: 800, fontSize: '0.95rem', color: C.text }}>
+                    {otpSent ? '🔢 Entrez votre code' : '📧 Connexion par code email'}
+                  </span>
+                  <button onClick={() => { setOtpMode(false); setOtpSent(false); setOtpCode(''); setOtpError(''); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.light }}>
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {otpError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', marginBottom: '12px' }}>
+                    <AlertCircle size={15} color={C.error} />
+                    <span style={{ color: C.error, fontSize: '0.83rem', fontWeight: 600 }}>{otpError}</span>
+                  </div>
+                )}
+
+                {!otpSent ? (
+                  <>
+                    <input type="email" value={otpEmail} onChange={e => { setOtpEmail(e.target.value); setOtpError(''); }}
+                      placeholder="votre@email.com"
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: `2px solid ${C.border}`, backgroundColor: '#fff', fontFamily: SANS, fontSize: '0.97rem', color: C.text, outline: 'none', boxSizing: 'border-box', marginBottom: '10px' }}
+                      onFocus={e => e.target.style.borderColor = C.primary}
+                      onBlur={e => e.target.style.borderColor = C.border} />
+                    <motion.button onClick={sendOtp} disabled={otpLoading} whileTap={{ scale: 0.98 }}
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: otpLoading ? C.border : C.primary, color: '#fff', fontWeight: 700, fontSize: '0.97rem', cursor: otpLoading ? 'default' : 'pointer', fontFamily: SANS, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      {otpLoading ? <><div style={{ width: '18px', height: '18px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Envoi…</> : <><Mail size={16} /> Envoyer le code</>}
+                    </motion.button>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: C.muted, lineHeight: 1.5 }}>
+                      Code envoyé à <strong>{otpEmail}</strong>. Valable <strong>10 min</strong>.
+                    </p>
+                    <input type="text" value={otpCode} onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
+                      placeholder="_ _ _ _ _ _" maxLength={6}
+                      style={{ width: '100%', padding: '14px', borderRadius: '12px', border: `2px solid ${C.border}`, backgroundColor: '#fff', fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 900, color: C.primary, outline: 'none', letterSpacing: '10px', textAlign: 'center', boxSizing: 'border-box', marginBottom: '10px' }}
+                      onFocus={e => e.target.style.borderColor = C.primary}
+                      onBlur={e => e.target.style.borderColor = C.border} />
+                    <motion.button onClick={verifyOtp} disabled={otpLoading || otpCode.length !== 6} whileTap={{ scale: 0.98 }}
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: (otpLoading || otpCode.length !== 6) ? C.border : C.primary, color: '#fff', fontWeight: 700, fontSize: '0.97rem', cursor: (otpLoading || otpCode.length !== 6) ? 'default' : 'pointer', fontFamily: SANS, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+                      {otpLoading ? <><div style={{ width: '18px', height: '18px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Vérification…</> : <>Valider le code <ArrowRight size={16} /></>}
+                    </motion.button>
+                    <button onClick={() => { setOtpSent(false); setOtpCode(''); setOtpError(''); }} disabled={otpCountdown > 0}
+                      style={{ width: '100%', background: 'none', border: 'none', color: otpCountdown > 0 ? C.light : C.primary, fontWeight: 600, fontSize: '0.85rem', cursor: otpCountdown > 0 ? 'default' : 'pointer', fontFamily: SANS }}>
+                      {otpCountdown > 0 ? `Renvoyer un code (${otpCountdown}s)` : 'Renvoyer un code'}
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            )}
           </div>
 
           <p style={{ textAlign: 'center', marginTop: '24px', color: C.muted, fontSize: '1rem' }}>

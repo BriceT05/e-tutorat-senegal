@@ -2,105 +2,48 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const prisma = require('../prisma');
+const { sendEmail } = require('../emails/sender');
+const T = require('../emails/templates');
+const { push } = require('../services/push');
 
-const sign = (user) => jwt.sign(
-  { id: user.id, role: user.role },
-  process.env.JWT_SECRET,
-  { expiresIn: '7d' }
-);
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+const sign = (user) =>
+  jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 const safeUser = (u) => {
   const { password, resetToken, resetTokenExpiry, emailVerifyToken, ...rest } = u;
   return rest;
 };
 
-async function sendVerifyEmail(prenom, email, verifyUrl) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log(`\n[VÉRIFICATION EMAIL] Lien pour ${email} :\n${verifyUrl}\n`);
-    return;
-  }
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
-  await transporter.sendMail({
-    from: `"e-Tutorat Sénégal" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Vérifiez votre adresse email — e-Tutorat',
-    html: `
-      <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:40px 24px;background:#FFFDF5;border-radius:16px">
-        <div style="text-align:center;margin-bottom:32px">
-          <div style="display:inline-block;background:#F97316;border-radius:12px;padding:12px 20px">
-            <span style="color:#fff;font-size:1.4rem;font-weight:900">e-Tutorat Sénégal 🇸🇳</span>
-          </div>
-        </div>
-        <h2 style="color:#3E2A1F;font-size:1.5rem;margin:0 0 12px">Bienvenue ${prenom} !</h2>
-        <p style="color:#524036;line-height:1.7;margin:0 0 24px">
-          Votre compte est créé. Cliquez sur le bouton ci-dessous pour vérifier votre adresse email.
-        </p>
-        <div style="text-align:center;margin:32px 0">
-          <a href="${verifyUrl}" style="display:inline-block;padding:16px 40px;background:#F97316;color:#fff;border-radius:100px;font-weight:800;font-size:1.05rem;text-decoration:none">
-            Vérifier mon email
-          </a>
-        </div>
-        <p style="color:#6B7280;font-size:0.85rem;line-height:1.6;margin:0">
-          Si vous n'avez pas créé de compte, ignorez cet email.<br>
-          Lien : <a href="${verifyUrl}" style="color:#F97316">${verifyUrl}</a>
-        </p>
-        <hr style="margin:32px 0;border:none;border-top:1px solid #E9D5A0">
-        <p style="color:#6B7280;font-size:0.8rem;text-align:center;margin:0">e-Tutorat Sénégal — Le tutorat de qualité pour tous 📚</p>
-      </div>
-    `,
-  });
+const frontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// ─── Rate limiting in-memory ────────────────────────────────────────────────────
+const _rl = new Map();
+function rateLimit(max, windowMs) {
+  return (req, res, next) => {
+    const key = `${req.ip}|${req.path}`;
+    const now = Date.now();
+    const e = _rl.get(key);
+    if (!e || now - e.t > windowMs) {
+      _rl.set(key, { n: 1, t: now });
+      return next();
+    }
+    if (e.n >= max) {
+      return res.status(429).json({ error: 'Trop de tentatives. Réessayez dans quelques minutes.' });
+    }
+    e.n++;
+    next();
+  };
 }
+// Nettoyage périodique pour éviter les fuites mémoire
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of _rl) if (now - v.t > 30 * 60 * 1000) _rl.delete(k);
+}, 10 * 60 * 1000);
 
-async function sendResetEmail(prenom, email, resetUrl) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log(`\n[RESET MOT DE PASSE] Lien pour ${email} :\n${resetUrl}\n`);
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
-
-  await transporter.sendMail({
-    from: `"e-Tutorat Sénégal" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Réinitialisation de votre mot de passe — e-Tutorat',
-    html: `
-      <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:40px 24px;background:#FFFDF5;border-radius:16px">
-        <div style="text-align:center;margin-bottom:32px">
-          <div style="display:inline-block;background:#F97316;border-radius:12px;padding:12px 20px">
-            <span style="color:#fff;font-size:1.4rem;font-weight:900">e-Tutorat Sénégal 🇸🇳</span>
-          </div>
-        </div>
-        <h2 style="color:#3E2A1F;font-size:1.5rem;margin:0 0 12px">Bonjour ${prenom} !</h2>
-        <p style="color:#524036;line-height:1.7;margin:0 0 24px">
-          Vous avez demandé la réinitialisation de votre mot de passe.<br>
-          Cliquez sur le bouton ci-dessous — ce lien expire dans <strong>1 heure</strong>.
-        </p>
-        <div style="text-align:center;margin:32px 0">
-          <a href="${resetUrl}" style="display:inline-block;padding:16px 40px;background:#F97316;color:#fff;border-radius:100px;font-weight:800;font-size:1.05rem;text-decoration:none">
-            Réinitialiser mon mot de passe
-          </a>
-        </div>
-        <p style="color:#6B7280;font-size:0.85rem;line-height:1.6;margin:0">
-          Si vous n'avez pas fait cette demande, ignorez cet email — votre mot de passe reste inchangé.<br>
-          Lien : <a href="${resetUrl}" style="color:#F97316">${resetUrl}</a>
-        </p>
-        <hr style="margin:32px 0;border:none;border-top:1px solid #E9D5A0">
-        <p style="color:#6B7280;font-size:0.8rem;text-align:center;margin:0">e-Tutorat Sénégal — Le tutorat de qualité pour tous 📚</p>
-      </div>
-    `,
-  });
-}
-
-// POST /api/auth/register
-router.post('/register', async (req, res) => {
+// ─── POST /api/auth/register ────────────────────────────────────────────────────
+router.post('/register', rateLimit(10, 60 * 60 * 1000), async (req, res) => {
   try {
     const { prenom, nom, email, password, role, ...profile } = req.body;
 
@@ -111,7 +54,6 @@ router.post('/register', async (req, res) => {
     if (exists) return res.status(409).json({ error: 'Email déjà utilisé' });
 
     const hash = await bcrypt.hash(password, 10);
-
     const verifyToken = crypto.randomBytes(32).toString('hex');
 
     const user = await prisma.user.create({
@@ -126,18 +68,32 @@ router.post('/register', async (req, res) => {
       },
     });
 
-    await prisma.notification.create({
+    const welcomeNotif = await prisma.notification.create({
       data: {
         userId: user.id,
         type: 'system',
         emoji: '🎉',
         title: 'Bienvenue sur e-Tutorat !',
-        body: 'Votre compte est créé. Vérifiez votre email pour activer votre compte.',
+        body: 'Votre compte est créé. Vérifiez votre email pour l\'activer.',
       },
     });
+    push(user.id, welcomeNotif);
 
-    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}?verify=${verifyToken}`;
-    await sendVerifyEmail(prenom, email, verifyUrl);
+    const verifyUrl = `${frontendUrl()}?verify=${verifyToken}`;
+
+    // Email de bienvenue + email de vérification
+    await Promise.all([
+      sendEmail({
+        to: email,
+        subject: `Bienvenue sur e-Tutorat Sénégal, ${prenom} ! 🎉`,
+        html: T.welcomeEmail({ prenom, role: user.role }),
+      }),
+      sendEmail({
+        to: email,
+        subject: 'Vérifiez votre adresse email — e-Tutorat Sénégal',
+        html: T.verifyEmail({ prenom, url: verifyUrl }),
+      }),
+    ]);
 
     res.status(201).json({ token: sign(user), user: safeUser(user) });
   } catch (err) {
@@ -146,8 +102,8 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
+// ─── POST /api/auth/login ───────────────────────────────────────────────────────
+router.post('/login', rateLimit(10, 15 * 60 * 1000), async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
@@ -165,37 +121,130 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me
+// ─── POST /api/auth/otp/send — Envoyer un code OTP ─────────────────────────────
+router.post('/otp/send', rateLimit(5, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !/\S+@\S+\.\S+/.test(email))
+      return res.status(400).json({ error: 'Email invalide' });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Réponse générique même si l'email n'existe pas (sécurité)
+    if (!user) return res.json({ ok: true });
+
+    // Invalider les anciens OTP pour cet email
+    await prisma.$executeRaw`
+      UPDATE login_otps SET used = true
+      WHERE email = ${email} AND used = false
+    `;
+
+    // Générer le code à 6 chiffres
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const hashed = await bcrypt.hash(code, 8);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.$executeRaw`
+      INSERT INTO login_otps (id, email, code, "expiresAt")
+      VALUES (gen_random_uuid(), ${email}, ${hashed}, ${expiresAt})
+    `;
+
+    await sendEmail({
+      to: email,
+      subject: `${code} — Votre code de connexion e-Tutorat`,
+      html: T.otpEmail({ prenom: user.prenom, code }),
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── POST /api/auth/otp/verify — Vérifier le code OTP ──────────────────────────
+router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ error: 'Email et code requis' });
+
+    // Récupérer le dernier OTP valide pour cet email
+    const rows = await prisma.$queryRaw`
+      SELECT * FROM login_otps
+      WHERE email = ${email}
+        AND used = false
+        AND "expiresAt" > NOW()
+      ORDER BY "createdAt" DESC
+      LIMIT 1
+    `;
+
+    const otp = rows[0];
+    if (!otp) return res.status(400).json({ error: 'Code invalide ou expiré' });
+
+    // Limiter les tentatives (max 5 par OTP)
+    if (otp.attempts >= 5) {
+      await prisma.$executeRaw`
+        UPDATE login_otps SET used = true WHERE id = ${otp.id}
+      `;
+      return res.status(429).json({ error: 'Trop de tentatives, demandez un nouveau code' });
+    }
+
+    const valid = await bcrypt.compare(String(code), otp.code);
+    if (!valid) {
+      await prisma.$executeRaw`
+        UPDATE login_otps SET attempts = attempts + 1 WHERE id = ${otp.id}
+      `;
+      return res.status(401).json({ error: 'Code incorrect' });
+    }
+
+    // Invalider l'OTP
+    await prisma.$executeRaw`
+      UPDATE login_otps SET used = true WHERE id = ${otp.id}
+    `;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    res.json({ token: sign(user), user: safeUser(user) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── GET /api/auth/me ───────────────────────────────────────────────────────────
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
     res.json(safeUser(user));
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// POST /api/auth/forgot-password
-router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email requis' });
-
+// ─── POST /api/auth/forgot-password ─────────────────────────────────────────────
+router.post('/forgot-password', rateLimit(5, 15 * 60 * 1000), async (req, res) => {
   try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requis' });
+
     const user = await prisma.user.findUnique({ where: { email } });
-    // Réponse générique pour ne pas révéler si l'email existe
     if (!user) return res.json({ message: 'Si cet email est enregistré, un lien a été envoyé.' });
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
+    const expiry = new Date(Date.now() + 60 * 60 * 1000);
 
     await prisma.user.update({
       where: { email },
       data: { resetToken: token, resetTokenExpiry: expiry },
     });
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}?reset=${token}`;
-    await sendResetEmail(user.prenom, email, resetUrl);
+    const resetUrl = `${frontendUrl()}?reset=${token}`;
+    await sendEmail({
+      to: email,
+      subject: 'Réinitialisation de votre mot de passe — e-Tutorat Sénégal',
+      html: T.resetPasswordEmail({ prenom: user.prenom, url: resetUrl }),
+    });
 
     res.json({ message: 'Si cet email est enregistré, un lien a été envoyé.' });
   } catch (err) {
@@ -204,20 +253,16 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// POST /api/auth/reset-password
+// ─── POST /api/auth/reset-password ──────────────────────────────────────────────
 router.post('/reset-password', async (req, res) => {
-  const { token, password } = req.body;
-  if (!token || !password) return res.status(400).json({ error: 'Token et mot de passe requis' });
-  if (password.length < 8) return res.status(400).json({ error: 'Mot de passe trop court (8 caractères minimum)' });
-
   try {
-    const user = await prisma.user.findFirst({
-      where: {
-        resetToken: token,
-        resetTokenExpiry: { gt: new Date() },
-      },
-    });
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token et mot de passe requis' });
+    if (password.length < 8) return res.status(400).json({ error: 'Minimum 8 caractères' });
 
+    const user = await prisma.user.findFirst({
+      where: { resetToken: token, resetTokenExpiry: { gt: new Date() } },
+    });
     if (!user) return res.status(400).json({ error: 'Lien invalide ou expiré' });
 
     const hash = await bcrypt.hash(password, 10);
@@ -233,12 +278,12 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-// GET /api/auth/verify-email?token=xxx
+// ─── GET /api/auth/verify-email ─────────────────────────────────────────────────
 router.get('/verify-email', async (req, res) => {
-  const { token } = req.query;
-  if (!token) return res.status(400).json({ error: 'Token manquant' });
-
   try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ error: 'Token manquant' });
+
     const user = await prisma.user.findFirst({ where: { emailVerifyToken: token } });
     if (!user) return res.status(400).json({ error: 'Lien invalide ou déjà utilisé' });
 
@@ -254,7 +299,7 @@ router.get('/verify-email', async (req, res) => {
   }
 });
 
-// POST /api/auth/resend-verify
+// ─── POST /api/auth/resend-verify ───────────────────────────────────────────────
 router.post('/resend-verify', require('../middleware/auth'), async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -264,8 +309,12 @@ router.post('/resend-verify', require('../middleware/auth'), async (req, res) =>
     const verifyToken = crypto.randomBytes(32).toString('hex');
     await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: verifyToken } });
 
-    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}?verify=${verifyToken}`;
-    await sendVerifyEmail(user.prenom, user.email, verifyUrl);
+    const verifyUrl = `${frontendUrl()}?verify=${verifyToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'Vérifiez votre adresse email — e-Tutorat Sénégal',
+      html: T.verifyEmail({ prenom: user.prenom, url: verifyUrl }),
+    });
 
     res.json({ message: 'Email de vérification renvoyé !' });
   } catch (err) {

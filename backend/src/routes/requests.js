@@ -1,8 +1,11 @@
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
+const { sendEmail } = require('../emails/sender');
+const T = require('../emails/templates');
+const { push } = require('../services/push');
 
-// GET /api/requests — mes demandes (élève ou tuteur)
+// ─── GET /api/requests ──────────────────────────────────────────────────────────
 router.get('/', auth, async (req, res) => {
   try {
     const { id, role } = req.user;
@@ -24,7 +27,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// POST /api/requests — créer une demande (élève uniquement)
+// ─── POST /api/requests — créer une demande ─────────────────────────────────────
 router.post('/', auth, async (req, res) => {
   try {
     if (req.user.role !== 'ELEVE')
@@ -33,30 +36,42 @@ router.post('/', auth, async (req, res) => {
     const { tuteurId, matiere, niveau, jours, duree, mode, message, tarif } = req.body;
     if (!tuteurId || !matiere) return res.status(400).json({ error: 'tuteurId et matiere requis' });
 
-    const request = await prisma.tutoringRequest.create({
-      data: {
-        eleveId: req.user.id,
-        tuteurId, matiere, niveau,
-        jours: jours || [],
-        duree, mode, message,
-        tarif: tarif ? parseInt(tarif) : null,
-      },
-      include: {
-        eleve:  { select: { id: true, prenom: true, nom: true } },
-        tuteur: { select: { id: true, prenom: true, nom: true } },
-      },
-    });
+    const [request, tuteur] = await Promise.all([
+      prisma.tutoringRequest.create({
+        data: {
+          eleveId: req.user.id,
+          tuteurId, matiere, niveau,
+          jours: jours || [],
+          duree, mode, message,
+          tarif: tarif ? parseInt(tarif) : null,
+        },
+        include: {
+          eleve:  { select: { id: true, prenom: true, nom: true } },
+          tuteur: { select: { id: true, prenom: true, nom: true, email: true } },
+        },
+      }),
+      prisma.user.findUnique({ where: { id: tuteurId }, select: { prenom: true, nom: true, email: true } }),
+    ]);
 
-    // Notifier le tuteur
-    await prisma.notification.create({
-      data: {
-        userId: tuteurId,
-        type: 'new_request',
-        emoji: '📬',
-        title: 'Nouvelle demande reçue',
-        body: `${request.eleve.prenom} ${request.eleve.nom} souhaite des cours de ${matiere}.`,
-      },
-    });
+    const eleve = request.eleve;
+
+    // Notification en base + SSE push + email au tuteur (en parallèle, sans bloquer la réponse)
+    Promise.all([
+      prisma.notification.create({
+        data: {
+          userId: tuteurId,
+          type: 'new_request',
+          emoji: '📬',
+          title: 'Nouvelle demande reçue',
+          body: `${eleve.prenom} ${eleve.nom} souhaite des cours de ${matiere}.`,
+        },
+      }).then(n => { push(tuteurId, n); return n; }),
+      tuteur?.email && sendEmail({
+        to: tuteur.email,
+        subject: `📬 Nouvelle demande de cours — ${eleve.prenom} ${eleve.nom}`,
+        html: T.newRequestEmail({ tuteur, eleve, matiere, niveau, message }),
+      }),
+    ]).catch(err => console.error('[REQUEST NOTIF]', err));
 
     res.status(201).json(request);
   } catch (err) {
@@ -65,7 +80,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// PATCH /api/requests/:id — changer le statut (tuteur uniquement)
+// ─── PATCH /api/requests/:id — changer le statut ────────────────────────────────
 router.patch('/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'TUTEUR')
@@ -75,7 +90,13 @@ router.patch('/:id', auth, async (req, res) => {
     if (!['CONFIRMEE', 'REFUSEE'].includes(status))
       return res.status(400).json({ error: 'Statut invalide' });
 
-    const existing = await prisma.tutoringRequest.findUnique({ where: { id: req.params.id }, include: { eleve: true, tuteur: true } });
+    const existing = await prisma.tutoringRequest.findUnique({
+      where: { id: req.params.id },
+      include: {
+        eleve:  { select: { id: true, prenom: true, nom: true, email: true } },
+        tuteur: { select: { id: true, prenom: true, nom: true } },
+      },
+    });
     if (!existing) return res.status(404).json({ error: 'Demande introuvable' });
     if (existing.tuteurId !== req.user.id) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -84,42 +105,54 @@ router.patch('/:id', auth, async (req, res) => {
       data: { status },
     });
 
-    // Notifier l'élève
-    await prisma.notification.create({
-      data: {
-        userId: existing.eleveId,
-        type: status === 'CONFIRMEE' ? 'request_confirmed' : 'request_refused',
-        emoji: status === 'CONFIRMEE' ? '✅' : '❌',
-        title: status === 'CONFIRMEE' ? 'Séance confirmée !' : 'Demande non retenue',
-        body: status === 'CONFIRMEE'
-          ? `${existing.tuteur.prenom} ${existing.tuteur.nom} a accepté votre demande pour ${existing.matiere}.`
-          : `${existing.tuteur.prenom} ${existing.tuteur.nom} n'est pas disponible pour cette période.`,
-      },
-    });
+    const { eleve, tuteur, matiere } = existing;
 
-    // Créer une conversation élève↔tuteur si la demande est confirmée (et qu'elle n'existe pas déjà)
-    if (status === 'CONFIRMEE') {
-      const existingConv = await prisma.conversation.findFirst({
-        where: {
-          AND: [
-            { members: { some: { userId: existing.eleveId } } },
-            { members: { some: { userId: existing.tuteurId } } },
-          ],
+    // Notification DB + email élève + conversation si confirmée (en parallèle)
+    const tasks = [
+      prisma.notification.create({
+        data: {
+          userId: eleve.id,
+          type: status === 'CONFIRMEE' ? 'request_confirmed' : 'request_refused',
+          emoji: status === 'CONFIRMEE' ? '✅' : '❌',
+          title: status === 'CONFIRMEE' ? 'Séance confirmée !' : 'Demande non retenue',
+          body: status === 'CONFIRMEE'
+            ? `${tuteur.prenom} ${tuteur.nom} a accepté votre demande pour ${matiere}.`
+            : `${tuteur.prenom} ${tuteur.nom} n'est pas disponible pour cette période.`,
         },
-      });
-      if (!existingConv) {
-        await prisma.conversation.create({
-          data: {
-            members: {
-              create: [
-                { userId: existing.eleveId },
-                { userId: existing.tuteurId },
-              ],
-            },
+      }).then(n => { push(eleve.id, n); return n; }),
+      eleve.email && sendEmail({
+        to: eleve.email,
+        subject: status === 'CONFIRMEE'
+          ? `✅ Séance de ${matiere} confirmée — e-Tutorat`
+          : `Votre demande de ${matiere} — e-Tutorat`,
+        html: T.requestStatusEmail({ eleve, tuteur, matiere, status }),
+      }),
+    ];
+
+    if (status === 'CONFIRMEE') {
+      tasks.push(
+        prisma.conversation.findFirst({
+          where: {
+            AND: [
+              { members: { some: { userId: eleve.id } } },
+              { members: { some: { userId: existing.tuteurId } } },
+            ],
           },
-        });
-      }
+        }).then(existingConv => {
+          if (!existingConv) {
+            return prisma.conversation.create({
+              data: {
+                members: {
+                  create: [{ userId: eleve.id }, { userId: existing.tuteurId }],
+                },
+              },
+            });
+          }
+        })
+      );
     }
+
+    Promise.all(tasks).catch(err => console.error('[STATUS NOTIF]', err));
 
     res.json(updated);
   } catch (err) {

@@ -1189,15 +1189,10 @@ const MessagesPanel = ({ currentUser }) => {
   );
 };
 
-// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
-const NotifCenter = ({ user }) => {
+// ─── NOTIFICATIONS — Bell dropdown (reçoit les notifs du parent) ──────────────
+const NotifCenter = ({ notifications, unread, onMarkRead, onMarkAll }) => {
   const [open, setOpen] = useState(false);
-  const [notifs, setNotifs] = useState([]);
   const ref = useRef(null);
-
-  useEffect(() => {
-    api.get('/notifications').then(data => { if (Array.isArray(data)) setNotifs(data); }).catch(() => {});
-  }, [user.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -1205,16 +1200,6 @@ const NotifCenter = ({ user }) => {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
-
-  const markRead = (id) => {
-    api.patch(`/notifications/${id}/read`).catch(() => {});
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-  const markAll = () => {
-    api.patch('/notifications/read-all').catch(() => {});
-    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
-  };
-  const unread = notifs.filter(n => !n.read).length;
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -1239,17 +1224,17 @@ const NotifCenter = ({ user }) => {
                 {unread > 0 && <span style={{ fontSize: '0.75rem', backgroundColor: C.primary, color: '#fff', borderRadius: '100px', padding: '1px 7px', marginLeft: '8px' }}>{unread}</span>}
               </div>
               {unread > 0 && (
-                <button onClick={markAll} style={{ fontSize: '0.78rem', color: C.primary, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS }}>
+                <button onClick={onMarkAll} style={{ fontSize: '0.78rem', color: C.primary, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: SANS }}>
                   Tout lire
                 </button>
               )}
             </div>
 
             <div style={{ overflowY: 'auto', flex: 1 }}>
-              {notifs.length === 0 ? (
+              {notifications.length === 0 ? (
                 <div style={{ padding: '40px 24px', textAlign: 'center', color: C.light, fontSize: '0.9rem', fontFamily: SANS }}>Aucune notification.</div>
-              ) : notifs.map(n => (
-                <motion.div key={n.id} onClick={() => markRead(n.id)} whileHover={{ backgroundColor: C.background }}
+              ) : notifications.map(n => (
+                <motion.div key={n.id} onClick={() => onMarkRead(n.id)} whileHover={{ backgroundColor: C.background }}
                   style={{ display: 'flex', gap: '12px', padding: '13px 18px', cursor: 'pointer', backgroundColor: n.read ? 'transparent' : `${C.accent}70`, borderBottom: `1px solid ${C.accent}40`, transition: 'background 0.15s' }}>
                   <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: n.read ? C.background : C.accent, display: 'grid', placeItems: 'center', fontSize: '17px', flexShrink: 0 }}>{n.emoji}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -1270,20 +1255,95 @@ const NotifCenter = ({ user }) => {
   );
 };
 
+// ─── PANEL NOTIFICATIONS complet ─────────────────────────────────────────────
+const NotificationsPanel = ({ notifications, onMarkRead, onMarkAll }) => {
+  const unread = notifications.filter(n => !n.read).length;
+  const isMobile = useIsMobile();
+
+  const typeColors = {
+    new_request:      { bg: '#EFF6FF', border: '#BFDBFE', dot: '#3B82F6' },
+    request_confirmed:{ bg: '#ECFDF5', border: '#A7F3D0', dot: '#10B981' },
+    request_refused:  { bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
+    system:           { bg: C.accent,  border: C.border,  dot: C.primary  },
+  };
+
+  return (
+    <div style={{ maxWidth: '680px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div>
+          <p style={{ color: C.light, fontSize: '0.9rem', margin: 0, fontFamily: SANS }}>
+            {unread > 0 ? `${unread} notification${unread > 1 ? 's' : ''} non lue${unread > 1 ? 's' : ''}` : 'Tout est à jour'}
+          </p>
+        </div>
+        {unread > 0 && (
+          <motion.button onClick={onMarkAll} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '100px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.primary, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: SANS }}>
+            <Check size={14} /> Tout marquer comme lu
+          </motion.button>
+        )}
+      </div>
+
+      {notifications.length === 0 ? (
+        <div style={{ backgroundColor: C.surface, borderRadius: '20px', padding: '60px 24px', textAlign: 'center', border: `1px solid ${C.accent}` }}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔔</div>
+          <p style={{ fontFamily: SERIF, fontSize: '1.1rem', color: C.muted, margin: '0 0 6px', fontWeight: 700 }}>Aucune notification</p>
+          <p style={{ color: C.light, fontSize: '0.9rem', margin: 0, fontFamily: SANS }}>Vous serez averti des nouvelles demandes et mises à jour ici.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {notifications.map(n => {
+            const c = typeColors[n.type] || typeColors.system;
+            return (
+              <motion.div key={n.id}
+                onClick={() => !n.read && onMarkRead(n.id)}
+                whileHover={{ scale: 1.005 }}
+                style={{
+                  display: 'flex', gap: '14px', padding: isMobile ? '14px' : '16px 20px',
+                  borderRadius: '16px', cursor: n.read ? 'default' : 'pointer',
+                  backgroundColor: n.read ? C.surface : c.bg,
+                  border: `1.5px solid ${n.read ? C.accent : c.border}`,
+                  transition: 'all 0.15s',
+                }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', backgroundColor: n.read ? C.background : C.accent, display: 'grid', placeItems: 'center', fontSize: '20px', flexShrink: 0 }}>
+                  {n.emoji}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: n.read ? 600 : 800, fontSize: '0.92rem', color: C.text, fontFamily: SANS }}>{n.title}</span>
+                    <span style={{ fontSize: '0.72rem', color: C.light, flexShrink: 0, fontFamily: SANS, paddingTop: '2px' }}>{fmtNotifTime(n.createdAt)}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: C.muted, lineHeight: 1.5, fontFamily: SANS }}>{n.body}</p>
+                </div>
+                {!n.read && (
+                  <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: c.dot }} />
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 const NAV_ELEVE = [
-  { id: 'dashboard',  icon: Home,           label: 'Tableau de bord' },
-  { id: 'messages',  icon: MessageSquare,   label: 'Messages' },
-  { id: 'paiements', icon: Wallet,          label: 'Paiements' },
-  { id: 'profil',    icon: GraduationCap,   label: 'Mon profil' },
-  { id: 'settings',  icon: Settings,        label: 'Paramètres' },
+  { id: 'dashboard',     icon: Home,           label: 'Tableau de bord' },
+  { id: 'messages',      icon: MessageSquare,  label: 'Messages' },
+  { id: 'notifications', icon: Bell,           label: 'Notifications' },
+  { id: 'paiements',     icon: Wallet,         label: 'Paiements' },
+  { id: 'profil',        icon: GraduationCap,  label: 'Mon profil' },
+  { id: 'settings',      icon: Settings,       label: 'Paramètres' },
 ];
 const NAV_TUTEUR = [
-  { id: 'dashboard',  icon: Home,           label: 'Tableau de bord' },
-  { id: 'messages',  icon: MessageSquare,   label: 'Messages' },
-  { id: 'paiements', icon: Wallet,          label: 'Revenus' },
-  { id: 'profil',    icon: Award,           label: 'Mon profil' },
-  { id: 'settings',  icon: Settings,        label: 'Paramètres' },
+  { id: 'dashboard',     icon: Home,           label: 'Tableau de bord' },
+  { id: 'messages',      icon: MessageSquare,  label: 'Messages' },
+  { id: 'notifications', icon: Bell,           label: 'Notifications' },
+  { id: 'paiements',     icon: Wallet,         label: 'Revenus' },
+  { id: 'profil',        icon: Award,          label: 'Mon profil' },
+  { id: 'settings',      icon: Settings,       label: 'Paramètres' },
 ];
 
 const EmailVerifyBanner = ({ userId }) => {
@@ -1328,6 +1388,53 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
   }, []);
 
   useEffect(() => { if (currentUser) fetchRequests(); }, [currentUser, fetchRequests]);
+
+  // ─── Notifications : état centralisé + SSE + polling ────────────────────────
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Chargement initial
+    api.get('/notifications').then(d => { if (Array.isArray(d)) setNotifications(d); }).catch(() => {});
+
+    // SSE pour le temps réel (EventSource ne supporte pas les headers → token en query)
+    const token = localStorage.getItem('etutorat_token');
+    let es = null;
+    if (token) {
+      const base = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      es = new EventSource(`${base}/notifications/stream?token=${encodeURIComponent(token)}`);
+      es.addEventListener('notification', (e) => {
+        try {
+          const n = JSON.parse(e.data);
+          setNotifications(prev => [n, ...prev]);
+        } catch {}
+      });
+      es.onerror = () => { es.close(); es = null; };
+    }
+
+    // Polling toutes les 30s comme fallback (si SSE coupé)
+    const poll = setInterval(() => {
+      api.get('/notifications').then(d => { if (Array.isArray(d)) setNotifications(d); }).catch(() => {});
+    }, 30000);
+
+    return () => {
+      es?.close();
+      clearInterval(poll);
+    };
+  }, [currentUser?.id]);
+
+  const notifUnread = notifications.filter(n => !n.read).length;
+
+  const markNotifRead = useCallback((id) => {
+    api.patch(`/notifications/${id}/read`).catch(() => {});
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  }, []);
+
+  const markAllNotifsRead = useCallback(() => {
+    api.patch('/notifications/read-all').catch(() => {});
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
 
   if (!currentUser) {
     return (
@@ -1389,7 +1496,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
             {navItems.map(item => (
               <NavItem key={item.id} icon={item.icon} label={item.label} active={activeNav === item.id}
                 onClick={() => setActiveNav(item.id)}
-                badge={item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : 0} />
+                badge={item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : item.id === 'notifications' ? notifUnread : 0} />
             ))}
           </nav>
           <div style={{ borderTop: `1px solid ${C.accent}`, paddingTop: '16px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1416,7 +1523,12 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <NotifCenter user={currentUser} />
+            <NotifCenter
+              notifications={notifications}
+              unread={notifUnread}
+              onMarkRead={markNotifRead}
+              onMarkAll={markAllNotifsRead}
+            />
             <UserAvatar user={currentUser} size={32} radius="9px" />
             {!isMobile && <span style={{ fontWeight: 600, fontSize: '0.9rem', color: C.text }}>{currentUser.prenom}</span>}
           </div>
@@ -1432,10 +1544,11 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
                 ? <DashboardEleve user={currentUser} requests={requests} onTuteurs={onTuteurs} />
                 : <DashboardTuteur user={currentUser} requests={requests} onUpdateRequests={fetchRequests} />
               )}
-              {activeNav === 'messages'  && <MessagesPanel currentUser={currentUser} />}
-              {activeNav === 'paiements' && <PaiementsPanel user={currentUser} requests={requests} />}
-              {activeNav === 'profil'    && <MonProfil user={currentUser} onUserUpdate={onUserUpdate} />}
-              {activeNav === 'settings'  && <SettingsPanel user={currentUser} onLogout={onLogout} />}
+              {activeNav === 'messages'       && <MessagesPanel currentUser={currentUser} />}
+              {activeNav === 'notifications'  && <NotificationsPanel notifications={notifications} onMarkRead={markNotifRead} onMarkAll={markAllNotifsRead} />}
+              {activeNav === 'paiements'      && <PaiementsPanel user={currentUser} requests={requests} />}
+              {activeNav === 'profil'         && <MonProfil user={currentUser} onUserUpdate={onUserUpdate} />}
+              {activeNav === 'settings'       && <SettingsPanel user={currentUser} onLogout={onLogout} />}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -1446,7 +1559,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
         <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTop: `1px solid ${C.accent}`, display: 'flex', zIndex: 50, paddingBottom: 'env(safe-area-inset-bottom)' }}>
           {navItems.slice(0, 4).map(item => {
             const Icon = item.icon;
-            const badge = item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : 0;
+            const badge = item.id === 'dashboard' ? pendingCount : item.id === 'messages' ? msgUnread : item.id === 'notifications' ? notifUnread : 0;
             const active = activeNav === item.id;
             return (
               <button key={item.id} onClick={() => setActiveNav(item.id)}
