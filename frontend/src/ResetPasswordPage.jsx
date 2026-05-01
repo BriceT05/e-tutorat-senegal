@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Lock, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import api from './api';
+import useIsMobile from './useIsMobile';
 
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
@@ -22,6 +23,7 @@ const focus = e => { e.target.style.borderColor = C.primary; e.target.style.boxS
 const blur = (hasErr, errColor) => e => { e.target.style.borderColor = hasErr ? errColor : C.border; e.target.style.boxShadow = 'none'; };
 
 export default function ResetPasswordPage({ token, onGoHome, onGoConnexion }) {
+  const isMobile = useIsMobile();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showP, setShowP] = useState(false);
@@ -94,7 +96,7 @@ export default function ResetPasswordPage({ token, onGoHome, onGoConnexion }) {
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           style={{ width: '100%', maxWidth: '480px' }}>
 
-          <div style={{ backgroundColor: C.surface, borderRadius: '32px', padding: '52px 48px', boxShadow: '0 8px 48px rgba(62,42,31,0.08)', border: `1px solid ${C.accent}`, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: C.surface, borderRadius: isMobile ? '20px' : '32px', padding: isMobile ? '32px 20px' : '52px 48px', boxShadow: '0 8px 48px rgba(62,42,31,0.08)', border: `1px solid ${C.accent}`, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />
 
             {done ? (

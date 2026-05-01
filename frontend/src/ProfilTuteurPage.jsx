@@ -86,7 +86,7 @@ const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
         style={{ backgroundColor: C.surface, borderRadius: '28px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 32px 80px rgba(62,42,31,0.2)', position: 'relative' }}>
 
         {/* Header */}
-        <div style={{ position: 'sticky', top: 0, backgroundColor: C.surface, zIndex: 10, padding: '24px 32px 0', borderBottom: `1px solid ${C.accent}` }}>
+        <div style={{ position: 'sticky', top: 0, backgroundColor: C.surface, zIndex: 10, padding: '20px 24px 0', borderBottom: `1px solid ${C.accent}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div>
               <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: C.primary, marginBottom: '4px' }}>Demande de suivi</div>
@@ -109,7 +109,7 @@ const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
           </div>
         </div>
 
-        <div style={{ padding: '24px 32px 32px', fontFamily: SANS }}>
+        <div style={{ padding: '20px 24px 28px', fontFamily: SANS }}>
           <AnimatePresence mode="wait">
 
             {/* Step 1 — Suivi */}
@@ -285,10 +285,10 @@ const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
 // ─── TOAST SUCCESS ────────────────────────────────────────────────────────────
 const Toast = ({ onClose }) => (
   <motion.div initial={{ opacity: 0, y: 60, x: '-50%' }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 60 }}
-    style={{ position: 'fixed', bottom: '40px', left: '50%', transform: 'translateX(-50%)', backgroundColor: C.text, color: '#FFFDF5', padding: '16px 28px', borderRadius: '100px', boxShadow: '0 20px 50px rgba(62,42,31,0.3)', display: 'flex', alignItems: 'center', gap: '12px', zIndex: 300, fontFamily: SANS, whiteSpace: 'nowrap' }}>
-    <CheckCircle2 size={22} color={C.secondary} />
-    <span style={{ fontWeight: 700, fontSize: '1rem' }}>Demande envoyée ! Le tuteur va vous contacter pour fixer le planning. 🎉</span>
-    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,253,245,0.5)', cursor: 'pointer', marginLeft: '4px', padding: '2px' }}><X size={16} /></button>
+    style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', backgroundColor: C.text, color: '#FFFDF5', padding: '14px 20px', borderRadius: '20px', boxShadow: '0 20px 50px rgba(62,42,31,0.3)', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 300, fontFamily: SANS, maxWidth: '90vw', width: 'max-content' }}>
+    <CheckCircle2 size={20} color={C.secondary} style={{ flexShrink: 0 }} />
+    <span style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.4 }}>Demande envoyée ! Le tuteur vous contactera. 🎉</span>
+    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,253,245,0.5)', cursor: 'pointer', padding: '2px', flexShrink: 0 }}><X size={14} /></button>
   </motion.div>
 );
 
@@ -354,13 +354,13 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
         {/* ── COLONNE GAUCHE ── */}
         <div>
           {/* Hero card */}
-          <div style={{ backgroundColor: C.surface, borderRadius: '28px', padding: '36px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.07)', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: C.surface, borderRadius: '28px', padding: isMobile ? '20px 16px' : '36px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.07)', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />
 
-            <div style={{ display: 'flex', gap: '28px', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: isMobile ? '16px' : '28px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
               {/* Avatar */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: '100px', height: '100px', borderRadius: '28px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '52px', boxShadow: `0 8px 24px rgba(249,115,22,0.15)`, overflow: 'hidden' }}>
+                <div style={{ width: isMobile ? '80px' : '100px', height: isMobile ? '80px' : '100px', borderRadius: '28px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '40px' : '52px', boxShadow: `0 8px 24px rgba(249,115,22,0.15)`, overflow: 'hidden' }}>
                   {tuteur.photo ? <img src={tuteur.photo} alt={tuteur.prenom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👨🏾‍🏫'}
                 </div>
                 {tuteur.online && (
@@ -369,16 +369,16 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
               </div>
 
               {/* Info */}
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                  <h1 style={{ fontFamily: SERIF, fontSize: '2rem', color: C.text, margin: 0, fontWeight: 700 }}>{tuteur.prenom} {tuteur.nom}</h1>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                  <h1 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.5rem' : '2rem', color: C.text, margin: 0, fontWeight: 700 }}>{tuteur.prenom} {tuteur.nom}</h1>
                   {tuteur.badge && (
                     <span style={{ backgroundColor: C.accent, color: C.primary, padding: '4px 12px', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 700 }}>{tuteur.badge}</span>
                   )}
                   {tuteur.online && <span style={{ backgroundColor: '#F0FDF4', color: '#166534', padding: '4px 12px', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 700 }}>● En ligne</span>}
                 </div>
-                <div style={{ fontSize: '1.05rem', color: C.primary, fontWeight: 700, marginBottom: '8px' }}>{tuteur.matieres.join(' · ')}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: isMobile ? '0.9rem' : '1.05rem', color: C.primary, fontWeight: 700, marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{tuteur.matieres.join(' · ')}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Stars n={tuteur.rating} />
                     <span style={{ fontWeight: 700, color: C.text }}>{tuteur.rating}</span>
@@ -419,7 +419,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
               <Tab label="Disponibilités" active={tab === 'dispo'} onClick={() => setTab('dispo')} />
             </div>
 
-            <div style={{ padding: '32px 36px' }}>
+            <div style={{ padding: isMobile ? '20px 16px' : '32px 36px' }}>
               <AnimatePresence mode="wait">
 
                 {/* À propos */}
@@ -604,8 +604,8 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
         <div style={{ position: isMobile ? 'static' : 'sticky', top: '88px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Booking card */}
-          <div style={{ backgroundColor: C.surface, borderRadius: '24px', padding: '28px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.08)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div style={{ backgroundColor: C.surface, borderRadius: '24px', padding: isMobile ? '20px 16px' : '28px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <span style={{ fontWeight: 900, fontSize: '1.8rem', color: C.text }}>{tuteur.tarif.toLocaleString('fr-FR')}</span>
                 <span style={{ fontSize: '0.9rem', color: C.light }}> FCFA / heure</span>

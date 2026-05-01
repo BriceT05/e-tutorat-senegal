@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, CheckCircle, XCircle, Loader } from 'lucide-react';
 import api from './api';
+import useIsMobile from './useIsMobile';
 
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
@@ -12,6 +13,7 @@ const SERIF = '"Playfair Display", serif';
 const SANS  = '"Inter", sans-serif';
 
 export default function VerifyEmailPage({ token, onGoHome, onGoConnexion }) {
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState('loading'); // loading | success | error
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function VerifyEmailPage({ token, onGoHome, onGoConnexion }) {
 
       <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px 80px', position: 'relative', zIndex: 5 }}>
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          style={{ backgroundColor: C.surface, borderRadius: '32px', padding: '52px 48px', boxShadow: '0 8px 48px rgba(62,42,31,0.08)', border: `1px solid ${C.accent}`, maxWidth: '480px', width: '100%', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+          style={{ backgroundColor: C.surface, borderRadius: isMobile ? '20px' : '32px', padding: isMobile ? '32px 20px' : '52px 48px', boxShadow: '0 8px 48px rgba(62,42,31,0.08)', border: `1px solid ${C.accent}`, maxWidth: '480px', width: '100%', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
 
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />
 

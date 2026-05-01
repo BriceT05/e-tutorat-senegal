@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, ArrowLeft, Shield, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import useIsMobile from './useIsMobile';
 
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
@@ -184,6 +185,7 @@ const PrivacyPolicy = () => (
 );
 
 export default function LegalPage({ tab = 'cgu', onGoHome, onGoBack }) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(tab);
 
   return (
@@ -207,16 +209,16 @@ export default function LegalPage({ tab = 'cgu', onGoHome, onGoBack }) {
         <div style={{ width: 80 }} />
       </header>
 
-      <main style={{ maxWidth: '800px', margin: '0 auto', padding: '48px 24px 80px' }}>
+      <main style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '32px 16px 80px' : '48px 24px 80px' }}>
         {/* Tabs */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '40px', backgroundColor: C.surface, padding: '6px', borderRadius: '16px', border: `1px solid ${C.accent}` }}>
           {[
-            { id: 'cgu', icon: FileText, label: 'Conditions d\'utilisation' },
-            { id: 'privacy', icon: Shield, label: 'Politique de confidentialité' },
-          ].map(({ id, icon: Icon, label }) => (
+            { id: 'cgu', icon: FileText, label: 'Conditions d\'utilisation', labelMobile: 'CGU' },
+            { id: 'privacy', icon: Shield, label: 'Politique de confidentialité', labelMobile: 'Confidentialité' },
+          ].map(({ id, icon: Icon, label, labelMobile }) => (
             <motion.button key={id} onClick={() => setActiveTab(id)} whileTap={{ scale: 0.98 }}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === id ? C.accent : 'transparent', color: activeTab === id ? C.primary : C.muted, fontWeight: activeTab === id ? 700 : 500, fontSize: '0.9rem', cursor: 'pointer', fontFamily: SANS, transition: 'all 0.2s' }}>
-              <Icon size={16} /> {label}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: isMobile ? '10px 8px' : '12px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === id ? C.accent : 'transparent', color: activeTab === id ? C.primary : C.muted, fontWeight: activeTab === id ? 700 : 500, fontSize: isMobile ? '0.82rem' : '0.9rem', cursor: 'pointer', fontFamily: SANS, transition: 'all 0.2s' }}>
+              <Icon size={15} /> {isMobile ? labelMobile : label}
             </motion.button>
           ))}
         </div>
@@ -235,7 +237,7 @@ export default function LegalPage({ tab = 'cgu', onGoHome, onGoBack }) {
             </div>
           </div>
 
-          <div style={{ backgroundColor: C.surface, borderRadius: '20px', padding: '36px', border: `1px solid ${C.accent}` }}>
+          <div style={{ backgroundColor: C.surface, borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px', border: `1px solid ${C.accent}` }}>
             {activeTab === 'cgu' ? <CGU /> : <PrivacyPolicy />}
           </div>
         </motion.div>

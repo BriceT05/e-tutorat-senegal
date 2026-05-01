@@ -1,6 +1,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { background-color: #FFFDF5; -webkit-font-smoothing: antialiased; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+body { background-color: #FFFDF5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+img, picture, video, canvas { max-width: 100%; height: auto; display: block; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

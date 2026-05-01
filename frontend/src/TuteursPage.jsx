@@ -109,8 +109,8 @@ const TuteurCard = ({ t, onView, delay }) => {
           {t.online && <div style={{ position: 'absolute', bottom: '2px', right: '2px', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#22C55E', border: '2px solid white' }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontFamily: SERIF, fontSize: '1.25rem', color: C.text, margin: '0 0 2px', fontWeight: 700 }}>{t.prenom} {t.nom}</h3>
-          <div style={{ fontSize: '0.9rem', color: C.primary, fontWeight: 700, marginBottom: '4px' }}>{t.matieres.join(' · ')}</div>
+          <h3 style={{ fontFamily: SERIF, fontSize: '1.15rem', color: C.text, margin: '0 0 2px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.prenom} {t.nom}</h3>
+          <div style={{ fontSize: '0.88rem', color: C.primary, fontWeight: 700, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.matieres.join(' · ')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <MapPin size={13} color={C.light} />
             <span style={{ fontSize: '0.85rem', color: C.light }}>{t.region}</span>
@@ -132,7 +132,7 @@ const TuteurCard = ({ t, onView, delay }) => {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '18px', paddingBottom: '16px', borderBottom: `1px solid ${C.accent}` }}>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '18px', paddingBottom: '16px', borderBottom: `1px solid ${C.accent}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <Stars n={t.rating} />
           <span style={{ fontWeight: 700, fontSize: '0.9rem', color: C.text }}>{t.rating}</span>
@@ -373,7 +373,7 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
                 </button>
               </motion.div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '24px' }}>
                 {filtered.map((t, i) => (
                   <TuteurCard key={t.id} t={t} onView={onViewTuteur} delay={i * 0.06} />
                 ))}

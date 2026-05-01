@@ -180,14 +180,21 @@ const Stepper = ({ step }) => {
 // ─── ÉTAPE 1 — Choix du profil ───────────────────────────────────────────────
 const Step1 = ({ role, setRole }) => (
   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
-    <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-      <h2 style={{ fontFamily: SERIF, fontSize: '2.4rem', color: C.text, margin: '0 0 12px', fontWeight: 700 }}>
+    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+      <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', color: C.text, margin: '0 0 12px', fontWeight: 700 }}>
         Qui êtes-<span style={{ color: C.primary, fontStyle: 'italic' }}>vous ?</span>
       </h2>
-      <p style={{ fontSize: '1.1rem', color: C.muted, fontFamily: SANS }}>Choisissez votre profil pour personnaliser votre expérience.</p>
+      <p style={{ fontSize: '1.05rem', color: C.muted, fontFamily: SANS }}>Choisissez votre profil pour personnaliser votre expérience.</p>
     </div>
 
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '600px', margin: '0 auto' }}>
+    <StepRoleGrid role={role} setRole={setRole} />
+  </motion.div>
+);
+
+const StepRoleGrid = ({ role, setRole }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '16px' : '24px', maxWidth: '600px', margin: '0 auto' }}>
       {[
         { id: 'eleve', emoji: '🎓', title: 'Élève / Parent', desc: "Je cherche un tuteur pour moi ou mon enfant. Du CI à la Terminale.", color: '#DBEAFE', accent: '#2563EB' },
         { id: 'tuteur', emoji: '👨🏾‍🏫', title: 'Tuteur', desc: "Je veux enseigner et accompagner des élèves sénégalais.", color: C.accent, accent: C.primary },
@@ -196,7 +203,7 @@ const Step1 = ({ role, setRole }) => (
         return (
           <motion.div key={id} onClick={() => setRole(id)} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }}
             style={{
-              padding: '36px 28px', borderRadius: '24px', cursor: 'pointer', textAlign: 'center',
+              padding: isMobile ? '24px 20px' : '36px 28px', borderRadius: '24px', cursor: 'pointer', textAlign: 'center',
               border: `3px solid ${active ? accent : C.border}`,
               backgroundColor: active ? color : C.surface,
               boxShadow: active ? `0 12px 32px rgba(249,115,22,0.15)` : '0 4px 16px rgba(62,42,31,0.05)',
@@ -214,8 +221,8 @@ const Step1 = ({ role, setRole }) => (
         );
       })}
     </div>
-  </motion.div>
-);
+  );
+};
 
 // ─── ÉTAPE 2 — Infos personnelles ────────────────────────────────────────────
 const Step2 = ({ data, set, errors }) => {
@@ -583,9 +590,9 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
 
         {/* Trust badges */}
         {step < 4 && (
-          <div style={{ display: 'flex', gap: '32px', justifyContent: 'center', marginTop: '32px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '28px', flexWrap: 'wrap' }}>
             {['🔒 100% sécurisé', '✅ Inscription gratuite', '🇸🇳 Données hébergées au Sénégal'].map(b => (
-              <span key={b} style={{ fontSize: '0.9rem', color: C.light, fontFamily: SANS, fontWeight: 500 }}>{b}</span>
+              <span key={b} style={{ fontSize: isMobile ? '0.82rem' : '0.9rem', color: C.light, fontFamily: SANS, fontWeight: 500, textAlign: 'center' }}>{b}</span>
             ))}
           </div>
         )}

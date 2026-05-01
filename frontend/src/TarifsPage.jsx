@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, X, Coins, Shield, Clock,
@@ -12,6 +12,16 @@ const C = {
 };
 const SERIF = '"Playfair Display", serif';
 const SANS = '"Inter", sans-serif';
+
+function useIsMobile(bp = 768) {
+  const [m, setM] = useState(() => window.innerWidth < bp);
+  useEffect(() => {
+    const h = () => setM(window.innerWidth < bp);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, [bp]);
+  return m;
+}
 
 const FadeIn = ({ children, delay = 0, style = {} }) => (
   <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -130,6 +140,7 @@ function FaqItem({ item }) {
 
 export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
   const [activeNiveau, setActiveNiveau] = useState('Lycée (2nde–Tle)');
+  const isMobile = useIsMobile();
 
   const fmt = (n) => n.toLocaleString('fr-FR') + ' FCFA';
 
@@ -164,7 +175,7 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
               Des tarifs adaptés à{' '}
               <span style={{ color: C.primary, fontStyle: 'italic' }}>chaque famille</span>
             </h1>
-            <p style={{ fontSize: '1.2rem', color: C.muted, lineHeight: 1.6, margin: '0 auto 40px', maxWidth: '620px' }}>
+            <p style={{ fontSize: isMobile ? '1rem' : '1.2rem', color: C.muted, lineHeight: 1.6, margin: '0 auto 40px', maxWidth: '620px' }}>
               Payez directement votre tuteur. Aucune commission cachée, aucun abonnement automatique. Juste du tutorat de qualité en FCFA.
             </p>
             <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -200,7 +211,7 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
 
       {/* Plans */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 5%' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '24px', alignItems: 'start' }}>
           {PLANS.map((plan, i) => (
             <FadeIn key={plan.id} delay={i * 0.12}>
               <div style={{
@@ -210,7 +221,7 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
                 overflow: 'hidden',
                 position: 'relative',
                 boxShadow: plan.highlight ? '0 20px 50px rgba(249,115,22,0.18)' : '0 4px 20px rgba(62,42,31,0.05)',
-                transform: plan.highlight ? 'scale(1.03)' : 'scale(1)',
+                transform: plan.highlight && !isMobile ? 'scale(1.03)' : 'scale(1)',
               }}>
                 {plan.badge && (
                   <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: C.primary, color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.5px' }}>
@@ -270,8 +281,8 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
             </h2>
             <p style={{ textAlign: 'center', color: C.light, marginBottom: '32px', fontSize: '1rem' }}>Tous les tarifs sont en FCFA par séance d'1 heure</p>
 
-            <div style={{ backgroundColor: C.surface, borderRadius: '20px', border: `1.5px solid ${C.border}`, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: SANS }}>
+            <div style={{ backgroundColor: C.surface, borderRadius: '20px', border: `1.5px solid ${C.border}`, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: SANS, minWidth: '480px' }}>
                 <thead>
                   <tr style={{ backgroundColor: C.accent }}>
                     <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 800, color: C.text, fontSize: '0.95rem' }}>Niveau scolaire</th>
@@ -302,7 +313,7 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
 
         {/* Paiement */}
         <FadeIn delay={0.4}>
-          <div style={{ marginTop: '64px', backgroundColor: C.surface, borderRadius: '24px', border: `1.5px solid ${C.border}`, padding: '40px', display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ marginTop: '64px', backgroundColor: C.surface, borderRadius: '24px', border: `1.5px solid ${C.border}`, padding: isMobile ? '24px 20px' : '40px', display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: '240px' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: C.accent, padding: '6px 14px', borderRadius: '100px', color: C.primary, fontWeight: 700, fontSize: '0.82rem', marginBottom: '16px' }}>
                 <Smartphone size={14} /> Moyens de paiement acceptés
@@ -333,7 +344,7 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
           <div style={{ marginTop: '72px' }}>
             <h2 style={{ fontFamily: SERIF, fontSize: '2rem', color: C.text, fontWeight: 800, margin: '0 0 8px 0', textAlign: 'center' }}>Questions fréquentes</h2>
             <p style={{ textAlign: 'center', color: C.light, marginBottom: '40px' }}>Tout ce que vous devez savoir sur les tarifs</p>
-            <div style={{ maxWidth: '720px', margin: '0 auto', backgroundColor: C.surface, borderRadius: '20px', border: `1.5px solid ${C.border}`, padding: '0 32px' }}>
+            <div style={{ maxWidth: '720px', margin: '0 auto', backgroundColor: C.surface, borderRadius: '20px', border: `1.5px solid ${C.border}`, padding: isMobile ? '0 16px' : '0 32px' }}>
               {FAQ_ITEMS.map(item => <FaqItem key={item.q} item={item} />)}
             </div>
           </div>
@@ -341,10 +352,10 @@ export default function TarifsPage({ onGoHome, onInscription, onTuteurs }) {
 
         {/* CTA */}
         <FadeIn delay={0.6}>
-          <div style={{ marginTop: '72px', background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, borderRadius: '28px', padding: '52px', textAlign: 'center', color: '#fff' }}>
+          <div style={{ marginTop: '72px', background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, borderRadius: '28px', padding: isMobile ? '36px 20px' : '52px', textAlign: 'center', color: '#fff' }}>
             <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🇸🇳</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: '2.4rem', fontWeight: 900, margin: '0 0 12px 0' }}>Prêt à commencer ?</h2>
-            <p style={{ fontSize: '1.15rem', opacity: 0.9, margin: '0 0 32px 0' }}>
+            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', fontWeight: 900, margin: '0 0 12px 0' }}>Prêt à commencer ?</h2>
+            <p style={{ fontSize: isMobile ? '1rem' : '1.15rem', opacity: 0.9, margin: '0 0 32px 0' }}>
               Inscrivez-vous gratuitement et trouvez votre tuteur idéal en moins de 5 minutes.
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>

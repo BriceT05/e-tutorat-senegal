@@ -218,34 +218,34 @@ const Hero = ({ onInscription, onTuteurs }) => {
       <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, ease: 'easeOut' }}>
         <SectionBadge><Globe size={16} /> L'excellence éducative au Sénégal</SectionBadge>
 
-        <h1 style={{ fontFamily: SERIF, fontSize: 'clamp(3.4rem, 5vw, 4.8rem)', color: C.text, lineHeight: 1.08, margin: '0 0 24px 0', fontWeight: 900 }}>
+        <h1 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 7vw, 4.8rem)', color: C.text, lineHeight: 1.1, margin: '0 0 20px 0', fontWeight: 900 }}>
           Le savoir partagé avec la{' '}
           <span style={{ color: C.primary, fontStyle: 'italic' }}>Teranga.</span>
         </h1>
 
-        <p style={{ fontSize: '1.35rem', color: C.muted, lineHeight: 1.65, marginBottom: '48px', maxWidth: '560px', borderLeft: `4px solid ${C.secondary}`, paddingLeft: '24px' }}>
+        <p style={{ fontSize: isMobile ? '1.05rem' : '1.35rem', color: C.muted, lineHeight: 1.65, marginBottom: isMobile ? '32px' : '48px', maxWidth: '560px', borderLeft: `4px solid ${C.secondary}`, paddingLeft: isMobile ? '16px' : '24px' }}>
           Connectez vos enfants aux meilleurs tuteurs du pays pour transformer leur avenir scolaire. Une plateforme conçue par et pour les Sénégalais.
         </p>
 
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <Btn onClick={onTuteurs}><Search size={22} /> Trouver un tuteur</Btn>
-          <Btn variant="secondary" onClick={onInscription}>Devenir tuteur <ChevronRight size={22} /></Btn>
+        <div style={{ display: 'flex', gap: isMobile ? '12px' : '20px', flexWrap: 'wrap' }}>
+          <Btn onClick={onTuteurs} style={{ padding: isMobile ? '0.9rem 1.6rem' : '1.15rem 2.6rem', fontSize: isMobile ? '1rem' : '1.15rem' }}><Search size={isMobile ? 18 : 22} /> Trouver un tuteur</Btn>
+          <Btn variant="secondary" onClick={onInscription} style={{ padding: isMobile ? '0.9rem 1.6rem' : '1.15rem 2.6rem', fontSize: isMobile ? '1rem' : '1.15rem' }}>Devenir tuteur <ChevronRight size={isMobile ? 18 : 22} /></Btn>
         </div>
 
         {/* Stats */}
-        <div style={{ marginTop: isMobile ? '36px' : '72px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ marginTop: isMobile ? '28px' : '72px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {[
             { icon: Users, value: '500+', label: 'Tuteurs' },
             { icon: GraduationCap, value: '10 000+', label: 'Élèves' },
             { icon: BookOpen, value: '50+', label: 'Matières' },
           ].map(({ icon: Icon, value, label }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.15 }}
-              style={{ backgroundColor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(10px)', padding: isMobile ? '1rem 1.2rem' : '1.4rem 1.8rem', borderRadius: '20px', border: `1px solid ${C.accent}`, flex: isMobile ? '1' : undefined, minWidth: isMobile ? '80px' : '155px', boxShadow: '0 4px 20px rgba(62,42,31,0.04)' }}>
-              <div style={{ backgroundColor: C.accent, padding: '8px', borderRadius: '10px', marginBottom: '10px', display: 'inline-block' }}>
-                <Icon size={isMobile ? 18 : 24} color={C.primary} />
+              style={{ backgroundColor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(10px)', padding: isMobile ? '0.8rem 1rem' : '1.4rem 1.8rem', borderRadius: '20px', border: `1px solid ${C.accent}`, flex: '1', minWidth: isMobile ? '0' : '155px', boxShadow: '0 4px 20px rgba(62,42,31,0.04)' }}>
+              <div style={{ backgroundColor: C.accent, padding: isMobile ? '6px' : '8px', borderRadius: '10px', marginBottom: '8px', display: 'inline-block' }}>
+                <Icon size={isMobile ? 16 : 24} color={C.primary} />
               </div>
-              <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: C.text }}>{value}</div>
-              <div style={{ fontSize: '0.78rem', color: C.light, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+              <div style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 900, color: C.text }}>{value}</div>
+              <div style={{ fontSize: isMobile ? '0.68rem' : '0.78rem', color: C.light, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
             </motion.div>
           ))}
         </div>
@@ -307,14 +307,14 @@ const HowItWorks = () => {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '20px' : '40px' }}>
           {steps.map(({ icon: Icon, n, title, desc }, i) => (
             <FadeIn key={n} delay={i * 0.15}>
-              <div style={{ background: C.surface, borderRadius: '28px', padding: '44px 36px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.06)', position: 'relative', overflow: 'hidden', height: '100%' }}>
-                <div style={{ position: 'absolute', top: '-10px', right: '20px', fontFamily: SERIF, fontSize: '6rem', fontWeight: 900, color: C.accent, lineHeight: 1, userSelect: 'none' }}>{n}</div>
-                <div style={{ width: '64px', height: '64px', borderRadius: '20px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '28px', boxShadow: `0 8px 20px rgba(249,115,22,0.15)` }}>
-                  <Icon size={32} color={C.primary} />
+              <div style={{ background: C.surface, borderRadius: '28px', padding: isMobile ? '28px 20px' : '44px 36px', border: `1px solid ${C.accent}`, boxShadow: '0 8px 32px rgba(62,42,31,0.06)', position: 'relative', overflow: 'hidden', height: '100%' }}>
+                <div style={{ position: 'absolute', top: '-10px', right: '20px', fontFamily: SERIF, fontSize: isMobile ? '4rem' : '6rem', fontWeight: 900, color: C.accent, lineHeight: 1, userSelect: 'none' }}>{n}</div>
+                <div style={{ width: isMobile ? '52px' : '64px', height: isMobile ? '52px' : '64px', borderRadius: '20px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: isMobile ? '20px' : '28px', boxShadow: `0 8px 20px rgba(249,115,22,0.15)` }}>
+                  <Icon size={isMobile ? 26 : 32} color={C.primary} />
                 </div>
-                <h3 style={{ fontFamily: SERIF, fontSize: '1.6rem', color: C.text, margin: '0 0 14px 0', fontWeight: 700 }}>{title}</h3>
-                <p style={{ fontSize: '1.05rem', color: C.muted, lineHeight: 1.65, margin: 0 }}>{desc}</p>
-                {i < steps.length - 1 && (
+                <h3 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.3rem' : '1.6rem', color: C.text, margin: '0 0 12px 0', fontWeight: 700 }}>{title}</h3>
+                <p style={{ fontSize: isMobile ? '0.95rem' : '1.05rem', color: C.muted, lineHeight: 1.65, margin: 0 }}>{desc}</p>
+                {i < steps.length - 1 && !isMobile && (
                   <div style={{ position: 'absolute', top: '50%', right: '-20px', zIndex: 2, backgroundColor: C.primary, borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(249,115,22,0.35)' }}>
                     <ArrowRight size={20} color="#fff" />
                   </div>
@@ -423,11 +423,11 @@ const Subjects = () => {
         {SUBJECTS.map(({ icon: Icon, label, color }, i) => (
           <FadeIn key={label} delay={i * 0.05}>
             <motion.div whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(62,42,31,0.1)' }}
-              style={{ background: C.surface, borderRadius: '20px', padding: '28px 16px', textAlign: 'center', border: `1px solid ${C.accent}`, boxShadow: '0 4px 16px rgba(62,42,31,0.04)', cursor: 'pointer' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', boxShadow: `0 4px 12px rgba(0,0,0,0.06)` }}>
-                <Icon size={28} color={C.primary} />
+              style={{ background: C.surface, borderRadius: '20px', padding: isMobile ? '16px 8px' : '28px 16px', textAlign: 'center', border: `1px solid ${C.accent}`, boxShadow: '0 4px 16px rgba(62,42,31,0.04)', cursor: 'pointer' }}>
+              <div style={{ width: isMobile ? '44px' : '56px', height: isMobile ? '44px' : '56px', borderRadius: '16px', backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', boxShadow: `0 4px 12px rgba(0,0,0,0.06)` }}>
+                <Icon size={isMobile ? 22 : 28} color={C.primary} />
               </div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: C.text }}>{label}</div>
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.95rem', fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{label}</div>
             </motion.div>
           </FadeIn>
         ))}
@@ -497,20 +497,20 @@ const CtaBanner = ({ onInscription }) => {
       <p style={{ fontSize: '1.3rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.6, marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
         Rejoignez plus de 10 000 familles sénégalaises qui font confiance à e-Tutorat pour la réussite de leurs enfants.
       </p>
-      <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: isMobile ? '12px' : '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
         <motion.button whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97 }} onClick={onInscription}
-          style={{ padding: '1.3rem 3rem', fontSize: '1.2rem', fontWeight: 800, borderRadius: '999px', border: 'none', backgroundColor: '#fff', color: C.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 12px 32px rgba(0,0,0,0.15)', fontFamily: SANS }}>
-          <Search size={22} /> Trouver un tuteur
+          style={{ padding: isMobile ? '1rem 2rem' : '1.3rem 3rem', fontSize: isMobile ? '1rem' : '1.2rem', fontWeight: 800, borderRadius: '999px', border: 'none', backgroundColor: '#fff', color: C.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 12px 32px rgba(0,0,0,0.15)', fontFamily: SANS }}>
+          <Search size={isMobile ? 18 : 22} /> Trouver un tuteur
         </motion.button>
         <motion.button whileHover={{ scale: 1.04, y: -3 }} onClick={onInscription}
-          style={{ padding: '1.3rem 3rem', fontSize: '1.2rem', fontWeight: 800, borderRadius: '999px', border: '2.5px solid rgba(255,255,255,0.7)', backgroundColor: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontFamily: SANS }}>
-          Devenir tuteur <ArrowRight size={22} />
+          style={{ padding: isMobile ? '1rem 2rem' : '1.3rem 3rem', fontSize: isMobile ? '1rem' : '1.2rem', fontWeight: 800, borderRadius: '999px', border: '2.5px solid rgba(255,255,255,0.7)', backgroundColor: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: SANS }}>
+          Devenir tuteur <ArrowRight size={isMobile ? 18 : 22} />
         </motion.button>
       </div>
-      <div style={{ display: 'flex', gap: '32px', justifyContent: 'center', marginTop: '48px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: isMobile ? '14px' : '32px', justifyContent: 'center', marginTop: isMobile ? '32px' : '48px', flexWrap: 'wrap' }}>
         {['Sans engagement', 'Tuteurs vérifiés', 'Satisfait ou remboursé'].map(item => (
-          <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.9)', fontSize: '1rem', fontWeight: 600 }}>
-            <Check size={18} /> {item}
+          <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.9)', fontSize: isMobile ? '0.85rem' : '1rem', fontWeight: 600 }}>
+            <Check size={16} /> {item}
           </div>
         ))}
       </div>
@@ -582,8 +582,8 @@ const Footer = ({ onLegal }) => {
         <div style={{ marginTop: '28px' }}>
           <div style={{ fontSize: '0.85rem', fontWeight: 700, color: C.secondary, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Newsletter</div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <input placeholder="Votre email" style={{ flex: 1, padding: '10px 16px', borderRadius: '100px', border: '1px solid rgba(255,253,245,0.15)', backgroundColor: 'rgba(255,253,245,0.06)', color: '#FFFDF5', fontSize: '0.9rem', outline: 'none', fontFamily: SANS }} />
-            <button style={{ padding: '10px 18px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', cursor: 'pointer', fontWeight: 700 }}>OK</button>
+            <input placeholder="Votre email" style={{ flex: 1, minWidth: 0, padding: '10px 16px', borderRadius: '100px', border: '1px solid rgba(255,253,245,0.15)', backgroundColor: 'rgba(255,253,245,0.06)', color: '#FFFDF5', fontSize: '0.9rem', outline: 'none', fontFamily: SANS }} />
+            <button style={{ padding: '10px 16px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>OK</button>
           </div>
         </div>
       </div>

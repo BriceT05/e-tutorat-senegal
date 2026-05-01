@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import useIsMobile from './useIsMobile';
 import {
   ArrowLeft, ArrowRight, Search,
   BookOpen, GraduationCap, TrendingUp, Lightbulb, Globe, Star,
@@ -38,6 +39,7 @@ const PROFILS = [
 ];
 
 export default function BlogPage({ onGoHome, onTuteurs }) {
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -72,7 +74,7 @@ export default function BlogPage({ onGoHome, onTuteurs }) {
               Le Blog de{' '}
               <span style={{ color: C.primary, fontStyle: 'italic' }}>la Communauté</span>
             </h1>
-            <p style={{ fontSize: '1.2rem', color: C.muted, maxWidth: '620px', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: isMobile ? '1rem' : '1.2rem', color: C.muted, maxWidth: '620px', lineHeight: 1.6, margin: 0 }}>
               Un espace ouvert où étudiants, chercheurs, professeurs et parents partagent leurs connaissances et expériences sur l'éducation au Sénégal.
             </p>
           </FadeIn>
@@ -142,7 +144,7 @@ export default function BlogPage({ onGoHome, onTuteurs }) {
 
         {/* Newsletter */}
         <FadeIn delay={0.3}>
-          <div style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, borderRadius: '28px', padding: '52px', textAlign: 'center', color: '#fff' }}>
+          <div style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, borderRadius: '28px', padding: isMobile ? '32px 20px' : '52px', textAlign: 'center', color: '#fff' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📬</div>
             <h2 style={{ fontFamily: SERIF, fontSize: '2rem', fontWeight: 900, margin: '0 0 10px 0' }}>
               Restez informé
@@ -151,7 +153,7 @@ export default function BlogPage({ onGoHome, onTuteurs }) {
               Recevez nos meilleurs articles, conseils de tuteurs et actus de l'éducation sénégalaise dès leur publication.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', maxWidth: '500px', margin: '0 auto' }}>
-              <input placeholder="votre@email.com" style={{ flex: 1, minWidth: '220px', padding: '13px 20px', borderRadius: '999px', border: 'none', fontFamily: SANS, fontSize: '0.95rem', outline: 'none' }} />
+              <input placeholder="votre@email.com" style={{ flex: 1, minWidth: 0, padding: '13px 20px', borderRadius: '999px', border: 'none', fontFamily: SANS, fontSize: '0.95rem', outline: 'none' }} />
               <button style={{ backgroundColor: C.text, color: '#fff', border: 'none', padding: '13px 24px', borderRadius: '999px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', fontFamily: SANS, whiteSpace: 'nowrap' }}>
                 S'abonner
               </button>

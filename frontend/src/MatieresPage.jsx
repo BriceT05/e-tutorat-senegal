@@ -205,7 +205,7 @@ export default function MatieresPage({ onGoHome, onTuteurs }) {
                   </div>
 
                   {/* Matieres grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '20px' }}>
                     {cat.matieres.map((m, mi) => {
                       const Icon = m.icon;
                       return (
