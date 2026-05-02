@@ -21,13 +21,7 @@ export default function NotFoundPage({ onGoHome, onTuteurs }) {
       {/* Logo */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
         style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '48px' }}>
-        <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-          <BookOpen size={24} color="#fff" />
-        </div>
-        <div>
-          <div style={{ fontFamily: SERIF, fontSize: '1.4rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-          <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-        </div>
+        <img src="/logo.png" alt="e-Tutorat" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}

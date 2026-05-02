@@ -29,15 +29,7 @@ export default function VerifyEmailPage({ token, onGoHome, onGoConnexion }) {
       <div style={{ position: 'absolute', top: '-15%', left: '-8%', width: '40vw', height: '40vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.18) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
 
       <header style={{ padding: '24px 5%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-            <BookOpen size={22} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.3rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-          </div>
-        </div>
+        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
       </header>
 
       <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px 80px', position: 'relative', zIndex: 5 }}>

@@ -1476,14 +1476,8 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
       {/* ── SIDEBAR desktop ── */}
       {!isMobile && (
         <aside style={{ width: '260px', flexShrink: 0, backgroundColor: C.surface, borderRight: `1px solid ${C.accent}`, position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', padding: '24px 16px', overflowY: 'auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px', marginBottom: '28px' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-              <BookOpen size={20} color="#fff" />
-            </div>
-            <div>
-              <div style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-            </div>
+          <div style={{ padding: '4px 8px', marginBottom: '28px' }}>
+            <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: C.accent, borderRadius: '16px', marginBottom: '24px' }}>
             <UserAvatar user={currentUser} size={42} radius="12px" />
@@ -1512,11 +1506,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
         <header style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.accent}`, padding: isMobile ? '0 16px' : '0 32px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {isMobile && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-                  <BookOpen size={17} color="#fff" />
-                </div>
-              </div>
+              <img src="/logo.png" alt="e-Tutorat" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
             )}
             <h1 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.1rem' : '1.5rem', color: C.text, margin: 0, fontWeight: 700 }}>
               {navItems.find(n => n.id === activeNav)?.label || 'Tableau de bord'}

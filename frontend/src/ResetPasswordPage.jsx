@@ -80,15 +80,7 @@ export default function ResetPasswordPage({ token, onGoHome, onGoConnexion }) {
         <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '1rem', fontWeight: 600, fontFamily: SANS }}>
           <ArrowLeft size={20} /> Accueil
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-            <BookOpen size={22} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.3rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-          </div>
-        </div>
+        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         <div style={{ width: 120 }} />
       </header>
 

@@ -329,12 +329,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
           <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontWeight: 600, fontSize: '0.95rem', flexShrink: 0 }}>
             <ArrowLeft size={18} /> Retour
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-              <BookOpen size={18} color="#fff" />
-            </div>
-            <span style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 900, color: C.text }}>e-Tutorat <span style={{ color: C.primary }}>SN</span></span>
-          </div>
+          <img src="/logo.png" alt="e-Tutorat" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
             <button onClick={() => setFav(f => !f)}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: isMobile ? '8px' : '8px 16px', borderRadius: '100px', border: `1.5px solid ${fav ? C.primary : C.border}`, backgroundColor: fav ? C.accent : 'transparent', color: fav ? C.primary : C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>

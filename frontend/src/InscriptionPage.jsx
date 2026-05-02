@@ -539,15 +539,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
           <ArrowLeft size={18} /> {!isMobile && 'Retour à l\'accueil'}
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>
-            <BookOpen size={22} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.3rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-          </div>
-        </div>
+        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
 
         <div style={{ fontSize: isMobile ? '0.82rem' : '0.95rem', color: C.light, fontFamily: SANS }}>
           {!isMobile && 'Déjà inscrit ? '}

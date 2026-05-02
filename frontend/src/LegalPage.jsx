@@ -197,15 +197,7 @@ export default function LegalPage({ tab = 'cgu', onGoHome, onGoBack }) {
         <button onClick={onGoBack || onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.95rem', fontWeight: 600, fontFamily: SANS }}>
           <ArrowLeft size={18} /> Retour
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-            <BookOpen size={20} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-          </div>
-        </div>
+        <img src="/logo.png" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
         <div style={{ width: 80 }} />
       </header>
 

@@ -267,12 +267,7 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
             <ArrowLeft size={16} /> Accueil
           </button>
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-                <BookOpen size={20} color="#fff" />
-              </div>
-              <span style={{ fontFamily: SERIF, fontSize: '1.2rem', fontWeight: 900, color: C.text }}>e-Tutorat <span style={{ color: C.primary }}>SN</span></span>
-            </div>
+            <img src="/logo.png" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
           )}
 
           {/* Search bar */}

@@ -124,15 +124,7 @@ const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, onT
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? '64px' : '80px' }}>
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: C.primary, display: 'grid', placeItems: 'center', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>
-            <BookOpen size={22} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 900, color: C.text, lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '2px', color: C.primary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-          </div>
-        </div>
+        <img src="/logo.png" alt="e-Tutorat" style={{ height: isMobile ? '40px' : '48px', width: 'auto', objectFit: 'contain' }} />
 
         {/* Links desktop */}
         {!isMobile && (
@@ -527,14 +519,8 @@ const Footer = ({ onLegal }) => {
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '48px 5% 32px' : '80px 5% 48px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr 1.4fr', gap: isMobile ? '36px' : '60px' }}>
       {/* Brand */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: C.primary, display: 'grid', placeItems: 'center' }}>
-            <BookOpen size={24} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: '1.4rem', fontWeight: 900, color: '#FFFDF5', lineHeight: 1 }}>e-Tutorat</div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '2px', color: C.secondary, textTransform: 'uppercase' }}>Sénégal 🇸🇳</div>
-          </div>
+        <div style={{ marginBottom: '20px' }}>
+          <img src="/logo.png" alt="e-Tutorat" style={{ height: '52px', width: 'auto', objectFit: 'contain', borderRadius: '12px', backgroundColor: '#fff', padding: '4px 8px' }} />
         </div>
         <p style={{ fontSize: '1rem', lineHeight: 1.7, maxWidth: '300px', marginBottom: '28px' }}>
           La première plateforme de tutorat en ligne dédiée aux élèves sénégalais. Du CI à la Terminale.
