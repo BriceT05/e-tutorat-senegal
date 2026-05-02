@@ -7,12 +7,26 @@ const authHeaders = () => ({
     : {}),
 });
 
-const req = (method, path, body) =>
-  fetch(`${BASE}${path}`, {
-    method,
-    headers: authHeaders(),
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  }).then(r => r.json());
+const req = async (method, path, body) => {
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: authHeaders(),
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch {
+    // Erreur réseau : CORS, serveur éteint, pas de connexion
+    return { error: 'Impossible de contacter le serveur. Vérifiez votre connexion.' };
+  }
+
+  try {
+    return await res.json();
+  } catch {
+    // Réponse non-JSON (HTML 503 Render, etc.)
+    return { error: `Erreur serveur (${res.status}). Réessayez dans quelques instants.` };
+  }
+};
 
 const api = {
   get:    path        => req('GET',    path),

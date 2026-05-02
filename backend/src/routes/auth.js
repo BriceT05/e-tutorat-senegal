@@ -81,8 +81,8 @@ router.post('/register', rateLimit(10, 60 * 60 * 1000), async (req, res) => {
 
     const verifyUrl = `${frontendUrl()}?verify=${verifyToken}`;
 
-    // Email de bienvenue + email de vérification
-    await Promise.all([
+    // Emails envoyés en arrière-plan — ne bloquent jamais la réponse
+    Promise.all([
       sendEmail({
         to: email,
         subject: `Bienvenue sur e-Tutorat Sénégal, ${prenom} ! 🎉`,
@@ -93,7 +93,7 @@ router.post('/register', rateLimit(10, 60 * 60 * 1000), async (req, res) => {
         subject: 'Vérifiez votre adresse email — e-Tutorat Sénégal',
         html: T.verifyEmail({ prenom, url: verifyUrl }),
       }),
-    ]);
+    ]).catch(err => console.error('[EMAIL REGISTER]', err));
 
     res.status(201).json({ token: sign(user), user: safeUser(user) });
   } catch (err) {
@@ -240,11 +240,11 @@ router.post('/forgot-password', rateLimit(5, 15 * 60 * 1000), async (req, res) =
     });
 
     const resetUrl = `${frontendUrl()}?reset=${token}`;
-    await sendEmail({
+    sendEmail({
       to: email,
       subject: 'Réinitialisation de votre mot de passe — e-Tutorat Sénégal',
       html: T.resetPasswordEmail({ prenom: user.prenom, url: resetUrl }),
-    });
+    }).catch(err => console.error('[EMAIL RESET]', err));
 
     res.json({ message: 'Si cet email est enregistré, un lien a été envoyé.' });
   } catch (err) {
@@ -310,11 +310,11 @@ router.post('/resend-verify', require('../middleware/auth'), async (req, res) =>
     await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: verifyToken } });
 
     const verifyUrl = `${frontendUrl()}?verify=${verifyToken}`;
-    await sendEmail({
+    sendEmail({
       to: user.email,
       subject: 'Vérifiez votre adresse email — e-Tutorat Sénégal',
       html: T.verifyEmail({ prenom: user.prenom, url: verifyUrl }),
-    });
+    }).catch(err => console.error('[EMAIL VERIFY]', err));
 
     res.json({ message: 'Email de vérification renvoyé !' });
   } catch (err) {
