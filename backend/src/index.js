@@ -10,11 +10,9 @@ const ALLOWED_ORIGINS = [
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, cb) => {
-    // Autorise les requêtes sans origin (mobile apps, Postman, curl)
     if (!origin) return cb(null, true);
-    // Autorise les URLs Vercel du projet + origines configurées
     if (
       ALLOWED_ORIGINS.includes(origin) ||
       /^https:\/\/frontend(-[a-z0-9]+-bricet05s-projects\.vercel\.app|(-alpha-seven-25)?\.vercel\.app)$/.test(origin) ||
@@ -24,8 +22,12 @@ app.use(cors({
     cb(new Error('CORS: origine non autorisée'));
   },
   credentials: true,
-}));
-app.use(express.json({ limit: '10mb' })); // 10mb pour les photos base64
+};
+
+// Gestion explicite des preflight OPTIONS (nécessaire avec credentials + JSON)
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/users',         require('./routes/users'));
