@@ -571,9 +571,17 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
             {step === 4 && <StepSuccess key="s4" role={role} prenom={info.prenom} onGoHome={onGoHome} onSuccess={() => onSuccess?.(savedToken, savedUser)} />}
           </AnimatePresence>
 
+          {/* Erreur inscription */}
+          {submitError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderRadius: '14px', backgroundColor: '#FEF2F2', border: '1.5px solid #FECACA', marginTop: '20px' }}>
+              <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+              <span style={{ color: '#DC2626', fontSize: '0.9rem', fontWeight: 600, fontFamily: SANS }}>{submitError}</span>
+            </div>
+          )}
+
           {/* Navigation buttons */}
           {step < 4 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '44px', paddingTop: '28px', borderTop: `1px solid ${C.accent}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '28px', paddingTop: '28px', borderTop: `1px solid ${C.accent}` }}>
               <button onClick={back} disabled={step === 1}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '100px', border: `2px solid ${step === 1 ? C.border : C.primary}`, backgroundColor: 'transparent', color: step === 1 ? C.light : C.primary, fontSize: '1rem', fontWeight: 700, cursor: step === 1 ? 'default' : 'pointer', fontFamily: SANS, opacity: step === 1 ? 0.4 : 1 }}>
                 <ArrowLeft size={18} /> Précédent
