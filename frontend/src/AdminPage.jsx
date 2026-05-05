@@ -527,7 +527,7 @@ const AdminBlog = () => {
             style={{ backgroundColor: C.surface, borderRadius: '20px', border: `1.5px solid ${C.primary}`, padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontFamily: SERIF, fontSize: '1.15rem', color: C.text, margin: 0 }}>
-                {editing ? 'Modifier l'article' : 'Nouvel article'}
+                {editing ? "Modifier l'article" : 'Nouvel article'}
               </h3>
               <button onClick={closeForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.light }}><X size={20} /></button>
             </div>
@@ -598,7 +598,7 @@ const AdminBlog = () => {
               </button>
               <motion.button onClick={save} disabled={saving} whileTap={{ scale: 0.97 }}
                 style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', backgroundColor: saving ? C.muted : C.primary, color: '#fff', fontWeight: 700, cursor: saving ? 'default' : 'pointer', fontFamily: SANS }}>
-                {saving ? 'Enregistrement…' : editing ? 'Mettre à jour' : 'Créer l'article'}
+                {saving ? 'Enregistrement…' : editing ? 'Mettre à jour' : "Créer l'article"}
               </motion.button>
             </div>
           </motion.div>

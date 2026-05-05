@@ -235,11 +235,11 @@ export default function BlogPage({ onGoHome, onTuteurs }) {
             <div style={{ textAlign: 'center', padding: '64px 40px', backgroundColor: C.surface, borderRadius: '28px', border: `2px dashed ${C.border}`, marginBottom: '64px' }}>
               <div style={{ fontSize: '5rem', marginBottom: '20px' }}>✍️</div>
               <h2 style={{ fontFamily: SERIF, fontSize: '2rem', color: C.text, fontWeight: 800, margin: '0 0 14px 0' }}>
-                {search || activeCategory !== 'all' ? 'Aucun article trouvé' : 'Aucun article pour l'instant'}
+                {search || activeCategory !== 'all' ? 'Aucun article trouvé' : "Aucun article pour l'instant"}
               </h2>
               <p style={{ fontSize: '1.05rem', color: C.muted, lineHeight: 1.65, maxWidth: '520px', margin: '0 auto 28px' }}>
                 {search || activeCategory !== 'all'
-                  ? 'Essayez d'autres mots-clés ou une autre catégorie.'
+                  ? "Essayez d'autres mots-clés ou une autre catégorie."
                   : 'Le blog est ouvert à toute la communauté e-Tutorat. Les articles apparaîtront dès que des membres publieront.'}
               </p>
               {(search || activeCategory !== 'all') && (
