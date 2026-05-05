@@ -4,6 +4,8 @@ const auth = require('../middleware/auth');
 const { sendEmail } = require('../emails/sender');
 const T = require('../emails/templates');
 const { push } = require('../services/push');
+const validate = require('../middleware/validate');
+const { requestCreateSchema, requestUpdateSchema } = require('../schemas');
 
 // ─── GET /api/requests ──────────────────────────────────────────────────────────
 router.get('/', auth, async (req, res) => {
@@ -28,22 +30,20 @@ router.get('/', auth, async (req, res) => {
 });
 
 // ─── POST /api/requests — créer une demande ─────────────────────────────────────
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, validate(requestCreateSchema), async (req, res) => {
   try {
     if (req.user.role !== 'ELEVE')
       return res.status(403).json({ error: 'Réservé aux élèves' });
 
     const { tuteurId, matiere, niveau, jours, duree, mode, message, tarif } = req.body;
-    if (!tuteurId || !matiere) return res.status(400).json({ error: 'tuteurId et matiere requis' });
 
     const [request, tuteur] = await Promise.all([
       prisma.tutoringRequest.create({
         data: {
           eleveId: req.user.id,
           tuteurId, matiere, niveau,
-          jours: jours || [],
-          duree, mode, message,
-          tarif: tarif ? parseInt(tarif) : null,
+          jours: jours ?? [],
+          duree, mode, message, tarif,
         },
         include: {
           eleve:  { select: { id: true, prenom: true, nom: true } },
@@ -81,14 +81,12 @@ router.post('/', auth, async (req, res) => {
 });
 
 // ─── PATCH /api/requests/:id — changer le statut ────────────────────────────────
-router.patch('/:id', auth, async (req, res) => {
+router.patch('/:id', auth, validate(requestUpdateSchema), async (req, res) => {
   try {
     if (req.user.role !== 'TUTEUR')
       return res.status(403).json({ error: 'Réservé aux tuteurs' });
 
     const { status } = req.body;
-    if (!['CONFIRMEE', 'REFUSEE'].includes(status))
-      return res.status(400).json({ error: 'Statut invalide' });
 
     const existing = await prisma.tutoringRequest.findUnique({
       where: { id: req.params.id },

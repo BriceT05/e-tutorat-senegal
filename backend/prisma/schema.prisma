@@ -73,6 +73,9 @@ model User {
   messagesSent     Message[]
   conversations    ConversationMember[]
   notifications    Notification[]
+  reviewsAsTuteur  Review[]          @relation("ReviewsAsTuteur")
+  reviewsAsEleve   Review[]          @relation("ReviewsAsEleve")
+  articles         Article[]
 
   @@map("users")
 }
@@ -139,6 +142,37 @@ model LoginOtp {
   createdAt DateTime @default(now())
 
   @@map("login_otps")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  tuteurId    String
+  eleveId     String
+  tuteur      User     @relation("ReviewsAsTuteur", fields: [tuteurId], references: [id])
+  eleve       User     @relation("ReviewsAsEleve", fields: [eleveId], references: [id])
+  note        Int
+  commentaire String?
+  createdAt   DateTime @default(now())
+
+  @@unique([tuteurId, eleveId])
+  @@map("reviews")
+}
+
+model Article {
+  id        String   @id @default(uuid())
+  titre     String
+  slug      String   @unique
+  extrait   String?
+  contenu   String
+  categorie String
+  coverUrl  String?
+  publie    Boolean  @default(false)
+  auteurId  String
+  auteur    User     @relation(fields: [auteurId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("articles")
 }
 
 model Notification {

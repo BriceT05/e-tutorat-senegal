@@ -94,7 +94,7 @@ const GeoPatter = ({ opacity = 0.04 }) => (
 );
 
 // ─── 1. NAVBAR ───────────────────────────────────────────────────────────────
-const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, onTarifs, currentUser, onDashboard }) => {
+const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, currentUser, onDashboard }) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useIsMobile();
@@ -108,7 +108,6 @@ const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, onT
   const links = [
     { label: 'Tuteurs', action: onTuteurs },
     { label: 'Matières', action: onMatieres },
-    { label: 'Tarifs', action: onTarifs },
     { label: 'Blog', action: onBlog },
   ];
 
@@ -595,7 +594,7 @@ const Footer = ({ onLegal }) => {
 };
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
-export default function HomePage({ onInscription, onConnexion, onTuteurs, onMatieres, onBlog, onTarifs, currentUser, onDashboard, onLegal }) {
+export default function HomePage({ onInscription, onConnexion, onTuteurs, onMatieres, onBlog, currentUser, onDashboard, onLegal }) {
   return (
     <>
       <style>{`
@@ -604,7 +603,7 @@ export default function HomePage({ onInscription, onConnexion, onTuteurs, onMati
         body { background-color: #FFFDF5; }
         html { scroll-behavior: smooth; }
       `}</style>
-      <Navbar onConnexion={onConnexion} onInscription={onInscription} onTuteurs={onTuteurs} onMatieres={onMatieres} onBlog={onBlog} onTarifs={onTarifs} currentUser={currentUser} onDashboard={onDashboard} />
+      <Navbar onConnexion={onConnexion} onInscription={onInscription} onTuteurs={onTuteurs} onMatieres={onMatieres} onBlog={onBlog} currentUser={currentUser} onDashboard={onDashboard} />
       <Hero onInscription={onInscription} onTuteurs={onTuteurs} />
       <HowItWorks />
       <FeaturedTutors onTuteurs={onTuteurs} />

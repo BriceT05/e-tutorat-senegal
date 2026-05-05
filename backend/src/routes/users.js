@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const { userUpdateSchema } = require('../schemas');
 
 const safeUser = (u) => { const { password, ...rest } = u; return rest; };
 
@@ -16,22 +18,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT /api/users/:id — mise à jour du profil (propriétaire seulement)
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, validate(userUpdateSchema), async (req, res) => {
   try {
     if (req.user.id !== req.params.id)
       return res.status(403).json({ error: 'Accès refusé' });
 
-    const { password, email, role, id, createdAt, ...data } = req.body;
+    const data = req.body;
 
     const updated = await prisma.user.update({
       where: { id: req.params.id },
-      data: {
-        ...data,
-        matieres:   data.matieres   ?? undefined,
-        niveaux:    data.niveaux    ?? undefined,
-        langues:    data.langues    ?? undefined,
-        formations: data.formations ?? undefined,
-      },
+      data,
     });
 
     res.json(safeUser(updated));

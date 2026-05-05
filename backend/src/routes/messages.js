@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const { messageCreateSchema } = require('../schemas');
 
 // GET /api/messages — mes conversations
 router.get('/', auth, async (req, res) => {
@@ -62,10 +64,9 @@ router.get('/:conversationId', auth, async (req, res) => {
 });
 
 // POST /api/messages — envoyer un message (crée la conversation si besoin)
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, validate(messageCreateSchema), async (req, res) => {
   try {
     const { recipientId, text, conversationId } = req.body;
-    if (!text?.trim()) return res.status(400).json({ error: 'Message vide' });
 
     let convId = conversationId;
 

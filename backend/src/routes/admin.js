@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
+const { slugify } = require('./articles');
+const validate = require('../middleware/validate');
+const { roleUpdateSchema, articleSchema, articleUpdateSchema } = require('../schemas');
 
 const adminOnly = (req, res, next) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
@@ -71,11 +74,9 @@ router.get('/users', auth, adminOnly, async (req, res) => {
 });
 
 // PATCH /api/admin/users/:id/role
-router.patch('/users/:id/role', auth, adminOnly, async (req, res) => {
+router.patch('/users/:id/role', auth, adminOnly, validate(roleUpdateSchema), async (req, res) => {
   try {
     const { role } = req.body;
-    if (!['ELEVE', 'TUTEUR', 'ADMIN'].includes(role))
-      return res.status(400).json({ error: 'Rôle invalide' });
     if (req.params.id === req.user.id)
       return res.status(400).json({ error: 'Impossible de modifier son propre rôle' });
     const updated = await prisma.user.update({
@@ -131,6 +132,100 @@ router.get('/requests', auth, adminOnly, async (req, res) => {
     ]);
     res.json({ requests, total, page: Number(page), limit: Number(limit) });
   } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── GET /api/admin/articles ──────────────────────────────────────────────────
+router.get('/articles', auth, adminOnly, async (req, res) => {
+  try {
+    const { q, page = 1, limit = 20 } = req.query;
+    const where = {};
+    if (q) where.OR = [
+      { titre:   { contains: q, mode: 'insensitive' } },
+      { extrait: { contains: q, mode: 'insensitive' } },
+    ];
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        include: { auteur: { select: { id: true, prenom: true, nom: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+      }),
+      prisma.article.count({ where }),
+    ]);
+    res.json({ articles, total, page: Number(page), limit: Number(limit) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── POST /api/admin/articles ─────────────────────────────────────────────────
+router.post('/articles', auth, adminOnly, validate(articleSchema), async (req, res) => {
+  try {
+    const { titre, slug, extrait, contenu, categorie, coverUrl, publie } = req.body;
+
+    const finalSlug = (slug?.trim() || slugify(titre)) || `article-${Date.now()}`;
+
+    const article = await prisma.article.create({
+      data: {
+        titre: titre.trim(),
+        slug: finalSlug,
+        extrait: extrait?.trim() || null,
+        contenu: contenu.trim(),
+        categorie,
+        coverUrl: coverUrl?.trim() || null,
+        publie: Boolean(publie),
+        auteurId: req.user.id,
+      },
+      include: { auteur: { select: { id: true, prenom: true, nom: true } } },
+    });
+    res.status(201).json(article);
+  } catch (err) {
+    if (err.code === 'P2002') return res.status(409).json({ error: 'Ce slug est déjà utilisé' });
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── PUT /api/admin/articles/:id ─────────────────────────────────────────────
+router.put('/articles/:id', auth, adminOnly, validate(articleUpdateSchema), async (req, res) => {
+  try {
+    const { titre, slug, extrait, contenu, categorie, coverUrl, publie } = req.body;
+
+    const data = {};
+    if (titre !== undefined)    data.titre    = titre.trim();
+    if (slug !== undefined)     data.slug     = slug.trim() || slugify(titre || '');
+    if (extrait !== undefined)  data.extrait  = extrait?.trim() || null;
+    if (contenu !== undefined)  data.contenu  = contenu.trim();
+    if (categorie !== undefined) data.categorie = categorie;
+    if (coverUrl !== undefined) data.coverUrl = coverUrl?.trim() || null;
+    if (publie !== undefined)   data.publie   = Boolean(publie);
+
+    const article = await prisma.article.update({
+      where: { id: req.params.id },
+      data,
+      include: { auteur: { select: { id: true, prenom: true, nom: true } } },
+    });
+    res.json(article);
+  } catch (err) {
+    if (err.code === 'P2002') return res.status(409).json({ error: 'Ce slug est déjà utilisé' });
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Article introuvable' });
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── DELETE /api/admin/articles/:id ──────────────────────────────────────────
+router.delete('/articles/:id', auth, adminOnly, async (req, res) => {
+  try {
+    await prisma.article.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Article introuvable' });
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
   }

@@ -10,7 +10,6 @@ import ProfilTuteurPage from './ProfilTuteurPage.jsx'
 import DashboardPage from './DashboardPage.jsx'
 import MatieresPage from './MatieresPage.jsx'
 import BlogPage from './BlogPage.jsx'
-import TarifsPage from './TarifsPage.jsx'
 import ResetPasswordPage from './ResetPasswordPage.jsx'
 import VerifyEmailPage from './VerifyEmailPage.jsx'
 import AdminPage from './AdminPage.jsx'
@@ -141,14 +140,7 @@ function App() {
       onTuteurs={() => nav('tuteurs')}
     />
 
-  if (page === 'tarifs')
-    return <TarifsPage
-      onGoHome={() => nav('home')}
-      onInscription={() => nav('inscription')}
-      onTuteurs={() => nav('tuteurs')}
-    />
-
-  const knownPages = ['home', 'inscription', 'connexion', 'tuteurs', 'profil', 'dashboard', 'matieres', 'blog', 'tarifs']
+  const knownPages = ['home', 'inscription', 'connexion', 'tuteurs', 'profil', 'dashboard', 'matieres', 'blog']
   if (!knownPages.includes(page))
     return <NotFoundPage
       onGoHome={() => nav('home')}
@@ -161,7 +153,6 @@ function App() {
     onTuteurs={() => nav('tuteurs')}
     onMatieres={() => nav('matieres')}
     onBlog={() => nav('blog')}
-    onTarifs={() => nav('tarifs')}
     onDashboard={() => { if (currentUser) nav('dashboard'); else nav('connexion') }}
     onLegal={(tab) => { setLegalTab(tab); nav('legal') }}
     currentUser={currentUser}

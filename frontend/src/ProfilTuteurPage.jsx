@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useIsMobile from './useIsMobile';
 import api from './api.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,7 +34,6 @@ const buildTuteur = (t) => ({
     Samedi: [false, false, false, false, false, false, false],
     Dimanche: [false, false, false, false, false, false, false],
   },
-  heures: ['08h–10h', '10h–12h', '12h–14h', '14h–16h', '16h–18h', '18h–20h', '20h–22h'],
   tauxReponse: t.tauxReponse || null,
   delaiReponse: t.delaiReponse || null,
   totalEleves: t.totalEleves || 0,
@@ -64,18 +63,35 @@ const PLAGES = [
   { label: 'Après-midi', detail: '12h – 18h' },
   { label: 'Soir', detail: '18h – 22h' },
 ];
+const DISPO_HEURES = ['08h–10h', '10h–12h', '12h–14h', '14h–16h', '16h–18h', '18h–20h', '20h–22h'];
 
-const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
-  const [step, setStep] = useState(1); // 1=suivi 2=planning 3=confirmation
+const ModalReservation = ({ tuteur, onClose, onConfirm, initSlots = [] }) => {
+  const [step, setStep] = useState(1);
   const [duree, setDuree] = useState('1 mois');
   const [matiere, setMatiere] = useState(tuteur.matieres[0]);
   const [mode, setMode] = useState(tuteur.mode === 'Les deux' ? 'En ligne' : tuteur.mode);
-  const [jours, setJours] = useState([]);
-  const [plages, setPlages] = useState([]);
+  const [selectedSlots, setSelectedSlots] = useState(initSlots);
   const [message, setMessage] = useState('');
 
+  // Fallback state used when tutor has no dispo configured
+  const [jours, setJours] = useState([]);
+  const [plages, setPlages] = useState([]);
   const toggleJour = j => setJours(p => p.includes(j) ? p.filter(x => x !== j) : [...p, j]);
   const togglePlage = p => setPlages(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
+
+  const dispo = tuteur.disponibilites;
+  const hasAnyDispo = dispo && Object.values(dispo).some(slots => slots.some(Boolean));
+
+  const isSelected = (jour, hi) => selectedSlots.some(s => s.jour === jour && s.hi === hi);
+  const toggleSlot = (jour, hi) => {
+    setSelectedSlots(prev =>
+      prev.some(s => s.jour === jour && s.hi === hi)
+        ? prev.filter(s => !(s.jour === jour && s.hi === hi))
+        : [...prev, { jour, hi }]
+    );
+  };
+
+  const canProceedStep2 = hasAnyDispo ? selectedSlots.length > 0 : jours.length > 0 && plages.length > 0;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -170,56 +186,129 @@ const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
             {/* Step 2 — Planning */}
             {step === 2 && (
               <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-                <div style={{ backgroundColor: C.accent, borderRadius: '14px', padding: '14px 18px', fontSize: '0.9rem', color: C.muted, lineHeight: 1.5 }}>
-                  Ces préférences seront transmises au tuteur. Vous discuterez ensemble du planning définitif après acceptation.
-                </div>
+                {hasAnyDispo ? (
+                  <>
+                    <div style={{ backgroundColor: C.accent, borderRadius: '14px', padding: '14px 18px', fontSize: '0.9rem', color: C.muted, lineHeight: 1.5 }}>
+                      Cliquez sur les créneaux disponibles qui vous conviennent. Le tuteur confirmera parmi vos choix.
+                    </div>
 
-                {/* Jours */}
-                <div>
-                  <label style={{ fontWeight: 700, fontSize: '0.95rem', color: C.text, display: 'block', marginBottom: '10px' }}>Jours préférés <span style={{ color: C.light, fontWeight: 400 }}>(plusieurs choix possibles)</span></label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {JOURS.map((j, i) => {
-                      const active = jours.includes(j);
-                      return (
-                        <motion.button key={j} onClick={() => toggleJour(j)} whileTap={{ scale: 0.93 }}
-                          style={{ padding: '10px 14px', borderRadius: '12px', border: `2px solid ${active ? C.primary : C.border}`, backgroundColor: active ? C.accent : C.surface, color: active ? C.primary : C.muted, fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
-                          {JOURS_COURT[i]}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '4px', minWidth: '460px' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ padding: '6px 8px', fontSize: '0.75rem', color: C.light, textAlign: 'left', fontFamily: SANS, fontWeight: 600 }}>Heure</th>
+                            {JOURS.map(j => (
+                              <th key={j} style={{ padding: '6px 8px', fontSize: '0.78rem', color: C.text, textAlign: 'center', fontFamily: SANS, fontWeight: 700 }}>{j.slice(0,3)}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {DISPO_HEURES.map((h, hi) => (
+                            <tr key={h}>
+                              <td style={{ padding: '4px 8px', fontSize: '0.75rem', color: C.light, whiteSpace: 'nowrap', fontFamily: SANS }}>{h}</td>
+                              {JOURS.map(jour => {
+                                const avail = dispo[jour]?.[hi];
+                                const sel = isSelected(jour, hi);
+                                return (
+                                  <td key={jour} style={{ padding: '3px' }}>
+                                    <div
+                                      onClick={() => avail && toggleSlot(jour, hi)}
+                                      style={{
+                                        height: '32px', borderRadius: '8px',
+                                        backgroundColor: sel ? C.primary : avail ? C.accent : '#F3F4F6',
+                                        border: `1.5px solid ${sel ? C.primary : avail ? 'rgba(249,115,22,0.35)' : '#E5E7EB'}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: avail ? 'pointer' : 'default',
+                                        transition: 'all 0.15s',
+                                      }}
+                                    >
+                                      {sel && <Check size={12} color="#fff" />}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                {/* Plages horaires */}
-                <div>
-                  <label style={{ fontWeight: 700, fontSize: '0.95rem', color: C.text, display: 'block', marginBottom: '10px' }}>Horaires préférés <span style={{ color: C.light, fontWeight: 400 }}>(plusieurs choix possibles)</span></label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {PLAGES.map(p => {
-                      const active = plages.includes(p.label);
-                      return (
-                        <motion.button key={p.label} onClick={() => togglePlage(p.label)} whileTap={{ scale: 0.98 }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderRadius: '14px', border: `2px solid ${active ? C.primary : C.border}`, backgroundColor: active ? C.accent : C.surface, cursor: 'pointer', textAlign: 'left' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: active ? C.primary : '#F3F4F6', display: 'grid', placeItems: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
-                            <Clock size={18} color={active ? '#fff' : C.light} />
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, color: active ? C.primary : C.text, fontSize: '0.95rem', fontFamily: SANS }}>{p.label}</div>
-                            <div style={{ fontSize: '0.85rem', color: C.light, fontFamily: SANS }}>{p.detail}</div>
-                          </div>
-                          {active && <Check size={18} color={C.primary} style={{ marginLeft: 'auto', flexShrink: 0 }} />}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
+                    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                      {[
+                        { bg: C.primary, label: 'Sélectionné', border: C.primary },
+                        { bg: C.accent, label: 'Disponible', border: 'rgba(249,115,22,0.35)' },
+                        { bg: '#F3F4F6', label: 'Indisponible', border: '#E5E7EB' },
+                      ].map(({ bg, label, border }) => (
+                        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ width: '14px', height: '14px', borderRadius: '4px', backgroundColor: bg, border: `1.5px solid ${border}`, flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.82rem', color: C.muted, fontFamily: SANS }}>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedSlots.length > 0 && (
+                      <div style={{ backgroundColor: '#F0FDF4', borderRadius: '12px', padding: '12px 16px' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', marginBottom: '4px' }}>
+                          {selectedSlots.length} créneau{selectedSlots.length > 1 ? 'x' : ''} sélectionné{selectedSlots.length > 1 ? 's' : ''}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: '#166534', lineHeight: 1.6 }}>
+                          {selectedSlots.map(s => `${s.jour} ${DISPO_HEURES[s.hi]}`).join(' • ')}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div style={{ backgroundColor: C.accent, borderRadius: '14px', padding: '14px 18px', fontSize: '0.9rem', color: C.muted, lineHeight: 1.5 }}>
+                      Ces préférences seront transmises au tuteur. Vous discuterez ensemble du planning définitif après acceptation.
+                    </div>
+
+                    <div>
+                      <label style={{ fontWeight: 700, fontSize: '0.95rem', color: C.text, display: 'block', marginBottom: '10px' }}>Jours préférés <span style={{ color: C.light, fontWeight: 400 }}>(plusieurs choix possibles)</span></label>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {JOURS.map((j, i) => {
+                          const active = jours.includes(j);
+                          return (
+                            <motion.button key={j} onClick={() => toggleJour(j)} whileTap={{ scale: 0.93 }}
+                              style={{ padding: '10px 14px', borderRadius: '12px', border: `2px solid ${active ? C.primary : C.border}`, backgroundColor: active ? C.accent : C.surface, color: active ? C.primary : C.muted, fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
+                              {JOURS_COURT[i]}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontWeight: 700, fontSize: '0.95rem', color: C.text, display: 'block', marginBottom: '10px' }}>Horaires préférés <span style={{ color: C.light, fontWeight: 400 }}>(plusieurs choix possibles)</span></label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {PLAGES.map(p => {
+                          const active = plages.includes(p.label);
+                          return (
+                            <motion.button key={p.label} onClick={() => togglePlage(p.label)} whileTap={{ scale: 0.98 }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', borderRadius: '14px', border: `2px solid ${active ? C.primary : C.border}`, backgroundColor: active ? C.accent : C.surface, cursor: 'pointer', textAlign: 'left' }}>
+                              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: active ? C.primary : '#F3F4F6', display: 'grid', placeItems: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
+                                <Clock size={18} color={active ? '#fff' : C.light} />
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 700, color: active ? C.primary : C.text, fontSize: '0.95rem', fontFamily: SANS }}>{p.label}</div>
+                                <div style={{ fontSize: '0.85rem', color: C.light, fontFamily: SANS }}>{p.detail}</div>
+                              </div>
+                              {active && <Check size={18} color={C.primary} style={{ marginLeft: 'auto', flexShrink: 0 }} />}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: C.muted, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>← Retour</button>
-                  <motion.button onClick={() => { if (jours.length > 0 && plages.length > 0) setStep(3); }}
+                  <motion.button onClick={() => canProceedStep2 && setStep(3)}
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                    style={{ padding: '13px 28px', borderRadius: '100px', border: 'none', backgroundColor: jours.length > 0 && plages.length > 0 ? C.primary : C.border, color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: jours.length > 0 && plages.length > 0 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: jours.length > 0 && plages.length > 0 ? '0 8px 20px rgba(249,115,22,0.3)' : 'none', fontFamily: SANS }}>
+                    style={{ padding: '13px 28px', borderRadius: '100px', border: 'none', backgroundColor: canProceedStep2 ? C.primary : C.border, color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: canProceedStep2 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: canProceedStep2 ? '0 8px 20px rgba(249,115,22,0.3)' : 'none', fontFamily: SANS }}>
                     Vérifier <ChevronRight size={18} />
                   </motion.button>
                 </div>
@@ -240,8 +329,9 @@ const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
                     { label: 'Matière', value: matiere },
                     { label: 'Mode', value: mode },
                     { label: 'Durée souhaitée', value: duree },
-                    { label: 'Jours préférés', value: jours.join(', ') },
-                    { label: 'Horaires', value: plages.join(', ') },
+                    hasAnyDispo
+                      ? { label: 'Créneaux souhaités', value: selectedSlots.map(s => `${s.jour.slice(0,3)} ${DISPO_HEURES[s.hi]}`).join(', ') || '—' }
+                      : { label: 'Planning souhaité', value: `${jours.join(', ')} — ${plages.join(', ')}` },
                   ].map(({ label, value }) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid rgba(249,115,22,0.1)` }}>
                       <span style={{ color: C.muted, fontSize: '0.9rem', fontFamily: SANS }}>{label}</span>
@@ -268,7 +358,7 @@ const ModalReservation = ({ tuteur, onClose, onConfirm }) => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: C.muted, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>← Retour</button>
-                  <motion.button onClick={() => onConfirm({ matiere, mode, duree, jours, plages, message })} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  <motion.button onClick={() => onConfirm({ matiere, mode, duree, selectedSlots, jours, plages, message })} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                     style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(249,115,22,0.35)', fontFamily: SANS }}>
                     <CheckCircle2 size={20} /> Envoyer la demande
                   </motion.button>
@@ -292,29 +382,132 @@ const Toast = ({ onClose }) => (
   </motion.div>
 );
 
+// ─── Formulaire d'avis ───────────────────────────────────────────────────────
+const ReviewForm = ({ tuteurId, onSubmitted }) => {
+  const [note, setNote] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [commentaire, setCommentaire] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const submit = async () => {
+    if (note === 0) return setErr('Veuillez sélectionner une note.');
+    setLoading(true);
+    setErr('');
+    const res = await api.post('/reviews', { tuteurId, note, commentaire });
+    setLoading(false);
+    if (res.error) return setErr(res.error);
+    onSubmitted(res);
+  };
+
+  return (
+    <div style={{ backgroundColor: C.accent, borderRadius: '20px', padding: '24px', marginBottom: '28px' }}>
+      <div style={{ fontFamily: SERIF, fontSize: '1.1rem', fontWeight: 700, color: C.text, marginBottom: '16px' }}>
+        Laisser un avis
+      </div>
+
+      {/* Étoiles interactives */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        {[1,2,3,4,5].map(i => (
+          <button key={i} onClick={() => setNote(i)}
+            onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(0)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
+            <Star size={32} fill={(hover || note) >= i ? C.secondary : 'transparent'} color={(hover || note) >= i ? C.secondary : C.border} />
+          </button>
+        ))}
+        {note > 0 && (
+          <span style={{ alignSelf: 'center', marginLeft: '8px', fontSize: '0.9rem', color: C.muted, fontWeight: 600, fontFamily: SANS }}>
+            {['', 'Très mauvais', 'Mauvais', 'Correct', 'Bien', 'Excellent'][note]}
+          </span>
+        )}
+      </div>
+
+      {/* Commentaire */}
+      <textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} rows={3}
+        placeholder="Partagez votre expérience avec ce tuteur… (optionnel)"
+        style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: `2px solid ${C.border}`, fontSize: '0.95rem', color: C.text, fontFamily: SANS, resize: 'vertical', outline: 'none', lineHeight: 1.6, boxSizing: 'border-box', backgroundColor: C.surface }}
+        onFocus={e => { e.target.style.borderColor = C.primary; }}
+        onBlur={e => { e.target.style.borderColor = C.border; }} />
+
+      {err && <p style={{ color: C.error, fontSize: '0.85rem', margin: '8px 0 0', fontFamily: SANS }}>{err}</p>}
+
+      <motion.button onClick={submit} disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+        style={{ marginTop: '14px', padding: '12px 28px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '0.95rem', fontWeight: 700, cursor: loading ? 'default' : 'pointer', fontFamily: SANS, opacity: loading ? 0.7 : 1 }}>
+        {loading ? 'Envoi…' : 'Publier mon avis'}
+      </motion.button>
+    </div>
+  );
+};
+
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, currentUser, onNeedAuth }) {
   const tuteur = buildTuteur(tuteurBase);
   const [tab, setTab] = useState('apropos');
   const [modal, setModal] = useState(false);
+  const [modalInitSlots, setModalInitSlots] = useState([]);
   const [toast, setToast] = useState(false);
   const [fav, setFav] = useState(false);
   const isMobile = useIsMobile();
 
-  const handleConfirm = async (requestData) => {
+  // ── Avis ──────────────────────────────────────────────────────────────────
+  const [reviews, setReviews] = useState([]);
+  const [canReview, setCanReview] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  const [noteAvg, setNoteAvg] = useState(tuteur.noteAvg || 0);
+  const [nbAvis, setNbAvis] = useState(tuteur.nbAvis || 0);
+
+  useEffect(() => {
+    api.get(`/reviews/${tuteur.id}`).then(data => {
+      if (data.reviews) {
+        setReviews(data.reviews);
+        setCanReview(data.canReview);
+        setHasReviewed(data.hasReviewed);
+        if (data.reviews.length > 0) {
+          const avg = data.reviews.reduce((s, r) => s + r.note, 0) / data.reviews.length;
+          setNoteAvg(Math.round(avg * 10) / 10);
+          setNbAvis(data.reviews.length);
+        }
+      }
+      setReviewsLoaded(true);
+    });
+  }, [tuteur.id]);
+
+  const handleReviewSubmitted = (newReview) => {
+    const updated = [newReview, ...reviews];
+    setReviews(updated);
+    setCanReview(false);
+    setHasReviewed(true);
+    const avg = updated.reduce((s, r) => s + r.note, 0) / updated.length;
+    setNoteAvg(Math.round(avg * 10) / 10);
+    setNbAvis(updated.length);
+  };
+
+  const handleConfirm = async ({ matiere, mode, duree, selectedSlots = [], jours: fallbackJours = [], plages = [], message }) => {
+    const jours = selectedSlots.length > 0
+      ? [...new Set(selectedSlots.map(s => s.jour))]
+      : fallbackJours;
+    let fullMessage = message;
+    if (selectedSlots.length > 0) {
+      const creneaux = selectedSlots.map(s => `${s.jour} ${DISPO_HEURES[s.hi]}`).join(', ');
+      fullMessage = `Créneaux souhaités : ${creneaux}${message ? '\n' + message : ''}`;
+    } else if (plages.length > 0) {
+      fullMessage = `Horaires préférés : ${plages.join(', ')}${message ? '\n' + message : ''}`;
+    }
     if (currentUser) {
       await api.post('/requests', {
         tuteurId: tuteur.id,
-        matiere: requestData.matiere,
-        niveau: requestData.niveau || null,
-        jours: requestData.jours || [],
-        duree: requestData.duree,
-        mode: requestData.mode,
-        message: requestData.message,
+        matiere,
+        niveau: null,
+        jours,
+        duree,
+        mode,
+        message: fullMessage,
         tarif: tuteur.tarif,
       }).catch(() => {});
     }
     setModal(false);
+    setModalInitSlots([]);
     setToast(true);
     setTimeout(() => setToast(false), 5000);
   };
@@ -375,9 +568,9 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
                 <div style={{ fontSize: isMobile ? '0.9rem' : '1.05rem', color: C.primary, fontWeight: 700, marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{tuteur.matieres.join(' · ')}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Stars n={tuteur.rating} />
-                    <span style={{ fontWeight: 700, color: C.text }}>{tuteur.rating}</span>
-                    <span style={{ color: C.light, fontSize: '0.9rem' }}>({tuteur.reviews} avis)</span>
+                    <Stars n={noteAvg} />
+                    <span style={{ fontWeight: 700, color: C.text }}>{noteAvg > 0 ? noteAvg.toFixed(1) : '—'}</span>
+                    <span style={{ color: C.light, fontSize: '0.9rem' }}>({nbAvis} avis)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: C.light, fontSize: '0.9rem' }}>
                     <MapPin size={14} /> {tuteur.region}
@@ -392,7 +585,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${C.accent}` }}>
               {[
-                { icon: Star,     value: tuteur.noteAvg   ? tuteur.noteAvg.toFixed(1) : '—',          label: 'Note moyenne' },
+                { icon: Star,     value: noteAvg > 0 ? noteAvg.toFixed(1) : '—',                       label: 'Note moyenne' },
                 { icon: Users,    value: tuteur.totalEleves ?? 0,                                        label: 'Élèves' },
                 { icon: Award,    value: tuteur.tauxReponse ? `${tuteur.tauxReponse}%` : '—',           label: 'Taux réponse' },
                 { icon: Clock,    value: tuteur.delaiReponse || '—',                                    label: 'Délai réponse' },
@@ -410,7 +603,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
           <div style={{ backgroundColor: C.surface, borderRadius: '28px', border: `1px solid ${C.accent}`, boxShadow: '0 4px 20px rgba(62,42,31,0.05)', overflow: 'hidden' }}>
             <div style={{ display: 'flex', borderBottom: `1px solid ${C.accent}`, overflowX: 'auto', paddingLeft: '8px' }}>
               <Tab label="À propos" active={tab === 'apropos'} onClick={() => setTab('apropos')} />
-              <Tab label="Avis" active={tab === 'avis'} onClick={() => setTab('avis')} count={tuteur.avis.length} />
+              <Tab label="Avis" active={tab === 'avis'} onClick={() => setTab('avis')} count={nbAvis} />
               <Tab label="Disponibilités" active={tab === 'dispo'} onClick={() => setTab('dispo')} />
             </div>
 
@@ -482,7 +675,21 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
                 {/* Avis */}
                 {tab === 'avis' && (
                   <motion.div key="avis" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                    {tuteur.avis.length === 0 ? (
+
+                    {/* Formulaire si l'élève peut laisser un avis */}
+                    {canReview && (
+                      <ReviewForm tuteurId={tuteur.id} onSubmitted={handleReviewSubmitted} />
+                    )}
+                    {hasReviewed && (
+                      <div style={{ backgroundColor: '#F0FDF4', border: '1.5px solid #BBF7D0', borderRadius: '14px', padding: '14px 18px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: SANS }}>
+                        <CheckCircle2 size={18} color="#166534" style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.9rem', color: '#166534', fontWeight: 600 }}>Vous avez déjà laissé un avis pour ce tuteur.</span>
+                      </div>
+                    )}
+
+                    {!reviewsLoaded ? (
+                      <div style={{ textAlign: 'center', padding: '40px', color: C.light, fontFamily: SANS }}>Chargement…</div>
+                    ) : reviews.length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '48px 20px', color: C.light, fontFamily: SANS }}>
                         <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⭐</div>
                         <p style={{ margin: 0, fontSize: '1rem' }}>Aucun avis pour le moment.</p>
@@ -491,16 +698,16 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
                     ) : (
                       <>
                         {/* Résumé */}
-                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center', backgroundColor: C.accent, borderRadius: '20px', padding: '24px 28px', marginBottom: '28px' }}>
+                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center', backgroundColor: C.accent, borderRadius: '20px', padding: '24px 28px', marginBottom: '28px', flexWrap: 'wrap' }}>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontFamily: SERIF, fontSize: '4rem', fontWeight: 700, color: C.primary, lineHeight: 1 }}>{tuteur.rating}</div>
-                            <Stars n={tuteur.rating} size={20} />
-                            <div style={{ fontSize: '0.85rem', color: C.light, marginTop: '4px' }}>{tuteur.reviews} avis</div>
+                            <div style={{ fontFamily: SERIF, fontSize: '4rem', fontWeight: 700, color: C.primary, lineHeight: 1 }}>{noteAvg.toFixed(1)}</div>
+                            <Stars n={noteAvg} size={20} />
+                            <div style={{ fontSize: '0.85rem', color: C.light, marginTop: '4px' }}>{nbAvis} avis</div>
                           </div>
-                          <div style={{ flex: 1 }}>
+                          <div style={{ flex: 1, minWidth: '180px' }}>
                             {[5,4,3,2,1].map(n => {
-                              const count = tuteur.avis.filter(a => a.note === n).length;
-                              const pct = tuteur.avis.length > 0 ? Math.round((count / tuteur.avis.length) * 100) : 0;
+                              const count = reviews.filter(r => r.note === n).length;
+                              const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
                               return (
                                 <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                                   <span style={{ fontSize: '0.85rem', color: C.light, width: '12px', textAlign: 'right' }}>{n}</span>
@@ -515,24 +722,30 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
                           </div>
                         </div>
 
-                        {tuteur.avis.map((a, i) => (
-                          <div key={i} style={{ padding: '24px 0', borderBottom: i < tuteur.avis.length - 1 ? `1px solid ${C.accent}` : 'none' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                                <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>👤</div>
-                                <div>
-                                  <div style={{ fontWeight: 700, color: C.text }}>{a.auteur}</div>
-                                  <div style={{ fontSize: '0.85rem', color: C.light }}>{a.role}</div>
+                        {reviews.map((r, i) => {
+                          const nom = `${r.eleve.prenom} ${r.eleve.nom ? r.eleve.nom[0] + '.' : ''}`;
+                          const date = new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                          return (
+                            <div key={r.id} style={{ padding: '24px 0', borderBottom: i < reviews.length - 1 ? `1px solid ${C.accent}` : 'none' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                                  <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', overflow: 'hidden', flexShrink: 0 }}>
+                                    {r.eleve.photo ? <img src={r.eleve.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🎓'}
+                                  </div>
+                                  <div>
+                                    <div style={{ fontWeight: 700, color: C.text }}>{nom}</div>
+                                    <div style={{ fontSize: '0.85rem', color: C.light }}>{r.eleve.niveau || 'Élève'}</div>
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <Stars n={r.note} />
+                                  <div style={{ fontSize: '0.82rem', color: C.light, marginTop: '2px' }}>{date}</div>
                                 </div>
                               </div>
-                              <div style={{ textAlign: 'right' }}>
-                                <Stars n={a.note} />
-                                <div style={{ fontSize: '0.82rem', color: C.light, marginTop: '2px' }}>{a.date}</div>
-                              </div>
+                              {r.commentaire && <p style={{ fontSize: '0.98rem', color: C.muted, lineHeight: 1.7, margin: 0 }}>{r.commentaire}</p>}
                             </div>
-                            <p style={{ fontSize: '0.98rem', color: C.muted, lineHeight: 1.7, margin: 0 }}>{a.texte}</p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </>
                     )}
                   </motion.div>
@@ -549,37 +762,49 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
                       </div>
                     ) : (
                     <>
-                    <p style={{ color: C.muted, marginBottom: '24px', fontSize: '1rem' }}>Créneaux disponibles cette semaine. Cliquez sur <strong>Réserver une séance</strong> pour choisir votre date.</p>
+                    <p style={{ color: C.muted, marginBottom: '24px', fontSize: '1rem' }}>Créneaux disponibles. <strong>Cliquez sur un créneau</strong> pour lancer une demande avec ce créneau pré-sélectionné.</p>
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '4px', minWidth: '500px' }}>
                         <thead>
                           <tr>
                             <th style={{ padding: '10px', fontSize: '0.8rem', color: C.light, textAlign: 'left', fontFamily: SANS, fontWeight: 600 }}>Heure</th>
-                            {Object.keys(tuteur.disponibilites).map(j => (
+                            {JOURS.map(j => (
                               <th key={j} style={{ padding: '10px', fontSize: '0.82rem', color: C.text, textAlign: 'center', fontFamily: SANS, fontWeight: 700 }}>{j.slice(0,3)}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
-                          {tuteur.heures.map((h, hi) => (
+                          {DISPO_HEURES.map((h, hi) => (
                             <tr key={h}>
                               <td style={{ padding: '8px 10px', fontSize: '0.8rem', color: C.light, whiteSpace: 'nowrap', fontFamily: SANS }}>{h}</td>
-                              {Object.values(tuteur.disponibilites).map((slots, ji) => (
-                                <td key={ji} style={{ padding: '4px' }}>
-                                  <div style={{ height: '36px', borderRadius: '10px', backgroundColor: slots[hi] ? C.accent : '#F3F4F6', border: `1.5px solid ${slots[hi] ? 'rgba(249,115,22,0.3)' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {slots[hi] && <Check size={14} color={C.primary} />}
-                                  </div>
-                                </td>
-                              ))}
+                              {JOURS.map(jour => {
+                                const avail = tuteur.disponibilites[jour]?.[hi];
+                                return (
+                                  <td key={jour} style={{ padding: '4px' }}>
+                                    <div
+                                      onClick={() => {
+                                        if (!avail) return;
+                                        if (!currentUser) { onNeedAuth?.(); return; }
+                                        setModalInitSlots([{ jour, hi }]);
+                                        setModal(true);
+                                      }}
+                                      style={{ height: '36px', borderRadius: '10px', backgroundColor: avail ? C.accent : '#F3F4F6', border: `1.5px solid ${avail ? 'rgba(249,115,22,0.3)' : '#E5E7EB'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: avail ? 'pointer' : 'default', transition: 'background 0.15s' }}
+                                      title={avail ? `Réserver ${jour} ${h}` : ''}
+                                    >
+                                      {avail && <Check size={14} color={C.primary} />}
+                                    </div>
+                                  </td>
+                                );
+                              })}
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                    <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: C.accent, border: `1.5px solid rgba(249,115,22,0.3)` }} />
-                        <span style={{ fontSize: '0.85rem', color: C.muted, fontFamily: SANS }}>Disponible</span>
+                        <span style={{ fontSize: '0.85rem', color: C.muted, fontFamily: SANS }}>Disponible — cliquer pour réserver</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: '#F3F4F6', border: '1.5px solid #E5E7EB' }} />
@@ -624,7 +849,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
             </div>
 
             {!isMobile && (
-              <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModal(true); }} whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
+              <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModalInitSlots([]); setModal(true); }} whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
                 style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(249,115,22,0.35)', fontFamily: SANS }}>
                 <Calendar size={20} /> Demander un suivi
               </motion.button>
@@ -651,7 +876,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
             <div style={{ fontWeight: 900, fontSize: '1.2rem', color: C.text }}>{tuteur.tarif.toLocaleString('fr-FR')} <span style={{ fontWeight: 500, fontSize: '0.85rem', color: C.light }}>FCFA/h</span></div>
             <div style={{ fontSize: '0.78rem', color: C.light }}>Répond en {tuteur.delaiReponse}</div>
           </div>
-          <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModal(true); }} whileTap={{ scale: 0.97 }}
+          <motion.button onClick={() => { if (!currentUser) { onNeedAuth?.(); return; } setModalInitSlots([]); setModal(true); }} whileTap={{ scale: 0.97 }}
             style={{ padding: '14px 24px', borderRadius: '14px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 6px 20px rgba(249,115,22,0.35)', fontFamily: SANS }}>
             <Calendar size={18} /> Demander un suivi
           </motion.button>
@@ -660,7 +885,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
 
       {/* Modal */}
       <AnimatePresence>
-        {modal && <ModalReservation tuteur={tuteur} onClose={() => setModal(false)} onConfirm={handleConfirm} />}
+        {modal && <ModalReservation tuteur={tuteur} onClose={() => { setModal(false); setModalInitSlots([]); }} onConfirm={handleConfirm} initSlots={modalInitSlots} />}
       </AnimatePresence>
 
       {/* Toast */}

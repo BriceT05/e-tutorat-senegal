@@ -10,6 +10,9 @@ import {
   MessageSquare, Send, Search,
 } from 'lucide-react';
 
+const SUPABASE_URL = 'https://kaswaniznskuwgwkttsa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imthc3dhbml6bnNrdXdnd2t0dHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzU5ODcsImV4cCI6MjA5MzA1MTk4N30.JcCnqJYXVKvh5KHpBSAeyeMntS0kQck0Ftr7cmQDmDY';
+
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
   surface: '#FFFFFF', accent: '#FEF3C7', text: '#3E2A1F',
@@ -449,24 +452,40 @@ const MonProfil = ({ user, onUserUpdate }) => {
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-  const handlePhoto = (e) => {
+  const handlePhoto = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { alert('Image trop grande (max 3 Mo)'); return; }
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const photo = ev.target.result;
-      const updated = { ...form, photo };
-      setForm(updated);
-      try {
-        const saved = await api.put(`/users/${user.id}`, { photo });
-        onUserUpdate({ ...user, ...saved });
-        showToast('Photo mise à jour !');
-      } catch {
-        showToast('Erreur lors de l\'upload de la photo.');
-      }
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 3 * 1024 * 1024) { showToast('Image trop grande (max 3 Mo)'); return; }
+
+    showToast('Upload en cours…');
+    try {
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${user.id}-${Date.now()}.${ext}`;
+
+      const uploadRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/avatars/${path}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': file.type,
+          },
+          body: file,
+        }
+      );
+
+      if (!uploadRes.ok) { showToast('Échec de l\'upload. Réessayez.'); return; }
+
+      const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
+      const saved = await api.put(`/users/${user.id}`, { photo: photoUrl });
+      if (saved.error) { showToast('Erreur lors de la sauvegarde.'); return; }
+
+      setForm(f => ({ ...f, photo: photoUrl }));
+      onUserUpdate({ ...user, ...saved });
+      showToast('Photo mise à jour !');
+    } catch {
+      showToast('Erreur lors de l\'upload de la photo.');
+    }
   };
 
   const save = async () => {

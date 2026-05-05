@@ -6,6 +6,8 @@ const prisma = require('../prisma');
 const { sendEmail } = require('../emails/sender');
 const T = require('../emails/templates');
 const { push } = require('../services/push');
+const validate = require('../middleware/validate');
+const S = require('../schemas');
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const sign = (user) =>
@@ -43,12 +45,9 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 // ─── POST /api/auth/register ────────────────────────────────────────────────────
-router.post('/register', rateLimit(10, 60 * 60 * 1000), async (req, res) => {
+router.post('/register', rateLimit(10, 60 * 60 * 1000), validate(S.registerSchema), async (req, res) => {
   try {
     const { prenom, nom, email, password, role, ...profile } = req.body;
-
-    if (!prenom || !nom || !email || !password || !role)
-      return res.status(400).json({ error: 'Champs obligatoires manquants' });
 
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) return res.status(409).json({ error: 'Email déjà utilisé' });
@@ -103,10 +102,9 @@ router.post('/register', rateLimit(10, 60 * 60 * 1000), async (req, res) => {
 });
 
 // ─── POST /api/auth/login ───────────────────────────────────────────────────────
-router.post('/login', rateLimit(10, 15 * 60 * 1000), async (req, res) => {
+router.post('/login', rateLimit(10, 15 * 60 * 1000), validate(S.loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
@@ -122,11 +120,9 @@ router.post('/login', rateLimit(10, 15 * 60 * 1000), async (req, res) => {
 });
 
 // ─── POST /api/auth/otp/send — Envoyer un code OTP ─────────────────────────────
-router.post('/otp/send', rateLimit(5, 15 * 60 * 1000), async (req, res) => {
+router.post('/otp/send', rateLimit(5, 15 * 60 * 1000), validate(S.otpSendSchema), async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email || !/\S+@\S+\.\S+/.test(email))
-      return res.status(400).json({ error: 'Email invalide' });
 
     const user = await prisma.user.findUnique({ where: { email } });
     // Réponse générique même si l'email n'existe pas (sécurité)
@@ -162,10 +158,9 @@ router.post('/otp/send', rateLimit(5, 15 * 60 * 1000), async (req, res) => {
 });
 
 // ─── POST /api/auth/otp/verify — Vérifier le code OTP ──────────────────────────
-router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), async (req, res) => {
+router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySchema), async (req, res) => {
   try {
     const { email, code } = req.body;
-    if (!email || !code) return res.status(400).json({ error: 'Email et code requis' });
 
     // Récupérer le dernier OTP valide pour cet email
     const rows = await prisma.$queryRaw`
@@ -223,10 +218,9 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
 });
 
 // ─── POST /api/auth/forgot-password ─────────────────────────────────────────────
-router.post('/forgot-password', rateLimit(5, 15 * 60 * 1000), async (req, res) => {
+router.post('/forgot-password', rateLimit(5, 15 * 60 * 1000), validate(S.forgotPasswordSchema), async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email requis' });
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.json({ message: 'Si cet email est enregistré, un lien a été envoyé.' });
@@ -254,11 +248,9 @@ router.post('/forgot-password', rateLimit(5, 15 * 60 * 1000), async (req, res) =
 });
 
 // ─── POST /api/auth/reset-password ──────────────────────────────────────────────
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', validate(S.resetPasswordSchema), async (req, res) => {
   try {
     const { token, password } = req.body;
-    if (!token || !password) return res.status(400).json({ error: 'Token et mot de passe requis' });
-    if (password.length < 8) return res.status(400).json({ error: 'Minimum 8 caractères' });
 
     const user = await prisma.user.findFirst({
       where: { resetToken: token, resetTokenExpiry: { gt: new Date() } },

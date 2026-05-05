@@ -5,6 +5,7 @@ import {
   Home, Users, BookOpen, LogOut, Search, Trash2,
   ChevronLeft, ChevronRight, Shield, RefreshCw,
   TrendingUp, MessageSquare, CheckCircle2, Clock, X,
+  PenLine, Plus, Eye, EyeOff, FileText,
 } from 'lucide-react';
 
 const C = {
@@ -405,6 +406,251 @@ const AdminRequests = () => {
   );
 };
 
+// ─── Helpers slug ─────────────────────────────────────────────────────────────
+const slugify = (str) =>
+  str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+
+const CATEGORIES = [
+  { id: 'conseils',    label: 'Conseils scolaires'    },
+  { id: 'bac',         label: 'BAC & Examens'          },
+  { id: 'orientation', label: 'Orientation'            },
+  { id: 'numerique',   label: 'Numérique & Éducation'  },
+  { id: 'succes',      label: 'Témoignages'            },
+];
+
+const EMPTY_FORM = { titre: '', slug: '', extrait: '', contenu: '', categorie: 'conseils', coverUrl: '', publie: false };
+
+// ─── Section : Blog ───────────────────────────────────────────────────────────
+const AdminBlog = () => {
+  const [articles, setArticles] = useState([]);
+  const [total, setTotal]     = useState(0);
+  const [page, setPage]       = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm]       = useState(EMPTY_FORM);
+  const [saving, setSaving]   = useState(false);
+  const [toast, setToast]     = useState('');
+  const [confirm, setConfirm] = useState(null);
+  const [formErr, setFormErr] = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const load = useCallback(() => {
+    setLoading(true);
+    api.get(`/admin/articles?page=${page}&limit=15`)
+      .then(data => { setArticles(data.articles || []); setTotal(data.total || 0); })
+      .finally(() => setLoading(false));
+  }, [page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => { setForm(EMPTY_FORM); setFormErr(''); setCreating(true); setEditing(null); };
+  const openEdit   = (a) => { setForm({ titre: a.titre, slug: a.slug, extrait: a.extrait || '', contenu: a.contenu, categorie: a.categorie, coverUrl: a.coverUrl || '', publie: a.publie }); setFormErr(''); setEditing(a); setCreating(false); };
+  const closeForm  = () => { setCreating(false); setEditing(null); };
+
+  const handleTitre = (v) => {
+    setF('titre', v);
+    if (!editing) setF('slug', slugify(v));
+  };
+
+  const save = async () => {
+    if (!form.titre.trim() || !form.contenu.trim()) { setFormErr('Le titre et le contenu sont obligatoires.'); return; }
+    setSaving(true); setFormErr('');
+    const body = { ...form, publie: Boolean(form.publie) };
+    const res = editing
+      ? await api.put(`/admin/articles/${editing.id}`, body)
+      : await api.post('/admin/articles', body);
+    setSaving(false);
+    if (res.error) { setFormErr(res.error); return; }
+    showToast(editing ? 'Article mis à jour !' : 'Article créé !');
+    closeForm();
+    load();
+  };
+
+  const togglePublish = async (a) => {
+    const res = await api.put(`/admin/articles/${a.id}`, { publie: !a.publie });
+    if (!res.error) {
+      setArticles(prev => prev.map(x => x.id === a.id ? { ...x, publie: !a.publie } : x));
+      showToast(a.publie ? 'Article dépublié' : 'Article publié !');
+    }
+  };
+
+  const deleteArticle = async (id) => {
+    await api.delete(`/admin/articles/${id}`);
+    setArticles(prev => prev.filter(a => a.id !== id));
+    setTotal(t => t - 1);
+    showToast('Article supprimé');
+    setConfirm(null);
+  };
+
+  const formView = creating || editing;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {confirm && (
+        <ConfirmModal
+          message={`Supprimer définitivement "${confirm.titre}" ?`}
+          onConfirm={() => deleteArticle(confirm.id)}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ backgroundColor: '#DCFCE7', border: '1.5px solid #86EFAC', borderRadius: '12px', padding: '12px 18px', color: '#166534', fontWeight: 600, fontSize: '0.9rem', fontFamily: SANS }}>
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* En-tête */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span style={{ fontFamily: SANS, fontSize: '0.88rem', color: C.light }}>{total} article{total > 1 ? 's' : ''} au total</span>
+        </div>
+        {!formView && (
+          <motion.button onClick={openCreate} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '12px', border: 'none', backgroundColor: C.primary, color: '#fff', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: SANS }}>
+            <Plus size={16} /> Nouvel article
+          </motion.button>
+        )}
+      </div>
+
+      {/* Formulaire create/edit */}
+      <AnimatePresence>
+        {formView && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ backgroundColor: C.surface, borderRadius: '20px', border: `1.5px solid ${C.primary}`, padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontFamily: SERIF, fontSize: '1.15rem', color: C.text, margin: 0 }}>
+                {editing ? 'Modifier l'article' : 'Nouvel article'}
+              </h3>
+              <button onClick={closeForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.light }}><X size={20} /></button>
+            </div>
+
+            {/* Titre */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: SANS }}>Titre *</label>
+              <input value={form.titre} onChange={e => handleTitre(e.target.value)}
+                placeholder="Ex : 5 astuces pour réussir le BAC de maths"
+                style={{ padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontSize: '0.95rem', fontFamily: SANS, color: C.text, outline: 'none', boxSizing: 'border-box', width: '100%' }} />
+            </div>
+
+            {/* Slug */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: SANS }}>Slug (URL)</label>
+              <input value={form.slug} onChange={e => setF('slug', e.target.value)}
+                placeholder="genere-automatiquement"
+                style={{ padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontSize: '0.88rem', fontFamily: 'monospace', color: C.muted, outline: 'none', boxSizing: 'border-box', width: '100%' }} />
+            </div>
+
+            {/* Catégorie */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: SANS }}>Catégorie *</label>
+              <select value={form.categorie} onChange={e => setF('categorie', e.target.value)}
+                style={{ padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontSize: '0.95rem', fontFamily: SANS, color: C.text, outline: 'none', backgroundColor: C.surface, cursor: 'pointer' }}>
+                {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </div>
+
+            {/* Extrait */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: SANS }}>Extrait (résumé court)</label>
+              <textarea value={form.extrait} onChange={e => setF('extrait', e.target.value)} rows={2}
+                placeholder="Un court résumé visible dans la liste d'articles…"
+                style={{ padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontSize: '0.9rem', fontFamily: SANS, color: C.text, outline: 'none', resize: 'vertical', lineHeight: 1.55, boxSizing: 'border-box', width: '100%' }} />
+            </div>
+
+            {/* Contenu */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: SANS }}>Contenu * <span style={{ color: C.light, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(texte libre, sauts de ligne respectés)</span></label>
+              <textarea value={form.contenu} onChange={e => setF('contenu', e.target.value)} rows={10}
+                placeholder="Rédigez votre article ici…"
+                style={{ padding: '12px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontSize: '0.93rem', fontFamily: SANS, color: C.text, outline: 'none', resize: 'vertical', lineHeight: 1.65, boxSizing: 'border-box', width: '100%' }} />
+            </div>
+
+            {/* Cover URL */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: C.light, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: SANS }}>URL de l'image de couverture (optionnel)</label>
+              <input value={form.coverUrl} onChange={e => setF('coverUrl', e.target.value)}
+                placeholder="https://…"
+                style={{ padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${C.border}`, fontSize: '0.9rem', fontFamily: SANS, color: C.text, outline: 'none', boxSizing: 'border-box', width: '100%' }} />
+            </div>
+
+            {/* Publié */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', fontFamily: SANS, fontSize: '0.93rem', fontWeight: 600, color: C.text }}>
+              <div onClick={() => setF('publie', !form.publie)}
+                style={{ width: '44px', height: '24px', borderRadius: '12px', backgroundColor: form.publie ? C.primary : C.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: '2px', left: form.publie ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+              </div>
+              {form.publie ? 'Publié (visible sur le blog)' : 'Brouillon (non visible)'}
+            </label>
+
+            {formErr && <p style={{ color: '#DC2626', fontSize: '0.85rem', margin: 0, fontFamily: SANS }}>{formErr}</p>}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={closeForm} style={{ padding: '10px 20px', borderRadius: '12px', border: `1.5px solid ${C.accent}`, background: 'transparent', color: C.muted, fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>
+                Annuler
+              </button>
+              <motion.button onClick={save} disabled={saving} whileTap={{ scale: 0.97 }}
+                style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', backgroundColor: saving ? C.muted : C.primary, color: '#fff', fontWeight: 700, cursor: saving ? 'default' : 'pointer', fontFamily: SANS }}>
+                {saving ? 'Enregistrement…' : editing ? 'Mettre à jour' : 'Créer l'article'}
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Liste */}
+      <div style={{ backgroundColor: C.surface, borderRadius: '20px', border: `1px solid ${C.accent}`, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: C.light, fontFamily: SANS }}>Chargement…</div>
+        ) : articles.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: C.light, fontFamily: SANS }}>
+            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✍️</div>
+            Aucun article. Créez le premier !
+          </div>
+        ) : articles.map((a, i) => (
+          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px', borderBottom: i < articles.length - 1 ? `1px solid ${C.accent}` : 'none', flexWrap: 'wrap' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: C.accent, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <FileText size={18} color={C.primary} />
+            </div>
+            <div style={{ flex: 1, minWidth: '160px' }}>
+              <div style={{ fontWeight: 700, color: C.text, fontSize: '0.92rem', fontFamily: SANS }}>{a.titre}</div>
+              <div style={{ fontSize: '0.78rem', color: C.light, fontFamily: SANS, marginTop: '2px' }}>
+                {fmtDate(a.createdAt)} · {a.auteur ? `${a.auteur.prenom} ${a.auteur.nom}` : '—'}
+              </div>
+            </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: '100px', backgroundColor: a.publie ? '#DCFCE7' : '#F3F4F6', color: a.publie ? '#166534' : C.light, fontFamily: SANS, flexShrink: 0 }}>
+              {a.publie ? '✓ Publié' : '○ Brouillon'}
+            </span>
+            <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+              <motion.button onClick={() => togglePublish(a)} whileTap={{ scale: 0.93 }} title={a.publie ? 'Dépublier' : 'Publier'}
+                style={{ width: '34px', height: '34px', borderRadius: '9px', border: `1px solid ${C.accent}`, backgroundColor: C.background, cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                {a.publie ? <EyeOff size={15} color={C.muted} /> : <Eye size={15} color={C.primary} />}
+              </motion.button>
+              <motion.button onClick={() => openEdit(a)} whileTap={{ scale: 0.93 }} title="Modifier"
+                style={{ width: '34px', height: '34px', borderRadius: '9px', border: `1px solid ${C.accent}`, backgroundColor: C.background, cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                <PenLine size={15} color={C.muted} />
+              </motion.button>
+              <motion.button onClick={() => setConfirm(a)} whileTap={{ scale: 0.93 }} title="Supprimer"
+                style={{ width: '34px', height: '34px', borderRadius: '9px', border: '1px solid #FEE2E2', backgroundColor: '#FFF5F5', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                <Trash2 size={15} color="#DC2626" />
+              </motion.button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Pagination page={page} total={total} limit={15} onPage={setPage} />
+    </div>
+  );
+};
+
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function AdminPage({ currentUser, onGoHome, onLogout }) {
   const [activeNav, setActiveNav] = useState('dashboard');
@@ -425,6 +671,7 @@ export default function AdminPage({ currentUser, onGoHome, onLogout }) {
     { id: 'dashboard', icon: TrendingUp, label: 'Tableau de bord' },
     { id: 'users',     icon: Users,      label: 'Utilisateurs'   },
     { id: 'requests',  icon: BookOpen,   label: 'Demandes'       },
+    { id: 'blog',      icon: PenLine,    label: 'Blog'           },
   ];
 
   return (
@@ -489,6 +736,7 @@ export default function AdminPage({ currentUser, onGoHome, onLogout }) {
               {activeNav === 'dashboard' && <AdminDashboard stats={stats} onRefresh={fetchStats} loading={loadingStats} />}
               {activeNav === 'users'     && <AdminUsers currentAdminId={currentUser.id} />}
               {activeNav === 'requests'  && <AdminRequests />}
+              {activeNav === 'blog'      && <AdminBlog />}
             </motion.div>
           </AnimatePresence>
         </div>
