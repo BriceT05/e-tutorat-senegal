@@ -206,18 +206,18 @@ export default function BlogPage({ onGoHome, onTuteurs }) {
       </div>
 
       {/* Search & Filters */}
-      <div style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.border}`, padding: '20px 5%', position: 'sticky', top: '72px', zIndex: 40 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+      <div style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.border}`, padding: isMobile ? '12px 5%' : '20px 5%', position: 'sticky', top: '72px', zIndex: 40 }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ position: 'relative' }}>
             <Search size={17} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: C.light }} />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher un article..."
               style={{ width: '100%', padding: '10px 16px 10px 40px', borderRadius: '999px', border: `1.5px solid ${C.border}`, backgroundColor: C.background, fontFamily: SANS, fontSize: '0.95rem', color: C.text, outline: 'none', boxSizing: 'border-box' }} />
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {CATEGORIES_BLOG.map(cat => (
               <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-                style={{ padding: '8px 14px', borderRadius: '999px', border: `1.5px solid ${activeCategory === cat.id ? C.primary : C.border}`, backgroundColor: activeCategory === cat.id ? C.primary : 'transparent', color: activeCategory === cat.id ? '#fff' : C.muted, fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', fontFamily: SANS, whiteSpace: 'nowrap' }}>
+                style={{ padding: '7px 14px', borderRadius: '999px', border: `1.5px solid ${activeCategory === cat.id ? C.primary : C.border}`, backgroundColor: activeCategory === cat.id ? C.primary : 'transparent', color: activeCategory === cat.id ? '#fff' : C.muted, fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', fontFamily: SANS, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 {cat.label}
               </button>
             ))}
