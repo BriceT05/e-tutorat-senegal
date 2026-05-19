@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 
 let _transporter = null;
 let _smtpOk = false;
+let _smtpError = null;
 
 // ─── Initialisation SMTP avec vérification ─────────────────────────────────────
 async function initEmail() {
@@ -35,11 +36,14 @@ async function initEmail() {
     await t.verify();
     _transporter = t;
     _smtpOk = true;
-    console.log(`[EMAIL] ✅ SMTP Gmail opérationnel → ${process.env.EMAIL_USER}`);
+    _smtpError = null;
+    const provider = process.env.EMAIL_HOST || 'Gmail';
+    console.log(`[EMAIL] ✅ SMTP ${provider} opérationnel → ${process.env.EMAIL_USER}`);
     return true;
   } catch (err) {
     _transporter = null;
     _smtpOk = false;
+    _smtpError = err.message;
     console.error(`[EMAIL] ❌ SMTP verify échoué : ${err.message}`);
     console.error(`[EMAIL]    EMAIL_USER = ${process.env.EMAIL_USER}`);
     console.error(`[EMAIL]    EMAIL_PASS = ${process.env.EMAIL_PASS ? '(défini, ' + process.env.EMAIL_PASS.length + ' chars)' : 'VIDE'}`);
@@ -92,6 +96,7 @@ function smtpStatus() {
     configured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS),
     ok: _smtpOk,
     user: process.env.EMAIL_USER || null,
+    error: _smtpError || undefined,
   };
 }
 
