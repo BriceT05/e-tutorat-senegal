@@ -205,7 +205,7 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
 
     if (otp.attempts >= 5) {
       await prisma.$executeRaw`
-        UPDATE login_otps SET used = true WHERE id = ${otp.id}
+        UPDATE login_otps SET used = true WHERE id = ${otp.id}::uuid
       `;
       return res.status(429).json({ error: 'Trop de tentatives, demandez un nouveau code' });
     }
@@ -213,13 +213,13 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
     const valid = await bcrypt.compare(String(code), otp.code);
     if (!valid) {
       await prisma.$executeRaw`
-        UPDATE login_otps SET attempts = attempts + 1 WHERE id = ${otp.id}
+        UPDATE login_otps SET attempts = attempts + 1 WHERE id = ${otp.id}::uuid
       `;
       return res.status(401).json({ error: 'Code incorrect' });
     }
 
     await prisma.$executeRaw`
-      UPDATE login_otps SET used = true WHERE id = ${otp.id}
+      UPDATE login_otps SET used = true WHERE id = ${otp.id}::uuid
     `;
 
     await prisma.user.update({
@@ -233,7 +233,7 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
     res.json({ token: sign(user), user: safeUser(user) });
   } catch (err) {
     console.error('[OTP VERIFY ERROR]', err);
-    res.status(500).json({ error: 'Erreur serveur', _debug: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
