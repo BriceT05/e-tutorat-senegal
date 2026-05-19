@@ -97,7 +97,7 @@ const CGU = () => (
 
     <Section title="10. Droit applicable">
       <p>Les présentes CGU sont soumises au droit sénégalais. Tout litige sera soumis aux tribunaux compétents de Dakar.</p>
-      <p>Dernière mise à jour : <strong>30 avril 2026</strong></p>
+      <p>Dernière mise à jour : <strong>18 mai 2026</strong></p>
     </Section>
   </div>
 );
@@ -106,7 +106,7 @@ const PrivacyPolicy = () => (
   <div>
     <Section title="1. Responsable du traitement">
       <p><strong>e-Tutorat Sénégal</strong> est responsable du traitement de vos données personnelles collectées via la Plateforme.</p>
-      <p>Contact : <a href="mailto:contact@etutorat.sn" style={{ color: C.primary }}>contact@etutorat.sn</a></p>
+      <p>Contact : <a href="mailto:etutorat2026@gmail.com" style={{ color: C.primary }}>etutorat2026@gmail.com</a></p>
     </Section>
 
     <Section title="2. Données collectées">
@@ -165,7 +165,7 @@ const PrivacyPolicy = () => (
         <li><strong>Droit à la portabilité</strong> : recevoir vos données dans un format lisible</li>
         <li><strong>Droit d'opposition</strong> : vous opposer à certains traitements</li>
       </ul>
-      <p>Pour exercer ces droits : <a href="mailto:contact@etutorat.sn" style={{ color: C.primary }}>contact@etutorat.sn</a></p>
+      <p>Pour exercer ces droits : <a href="mailto:etutorat2026@gmail.com" style={{ color: C.primary }}>etutorat2026@gmail.com</a></p>
     </Section>
 
     <Section title="8. Cookies">
@@ -177,9 +177,9 @@ const PrivacyPolicy = () => (
     </Section>
 
     <Section title="10. Contact et réclamations">
-      <p>Pour toute question relative à vos données : <a href="mailto:contact@etutorat.sn" style={{ color: C.primary }}>contact@etutorat.sn</a></p>
+      <p>Pour toute question relative à vos données : <a href="mailto:etutorat2026@gmail.com" style={{ color: C.primary }}>etutorat2026@gmail.com</a></p>
       <p>Vous pouvez également saisir la <strong>CDP (Commission des Données Personnelles)</strong> du Sénégal en cas de litige non résolu.</p>
-      <p>Dernière mise à jour : <strong>30 avril 2026</strong></p>
+      <p>Dernière mise à jour : <strong>18 mai 2026</strong></p>
     </Section>
   </div>
 );
@@ -225,7 +225,7 @@ export default function LegalPage({ tab = 'cgu', onGoHome, onGoBack }) {
               <h1 style={{ fontFamily: SERIF, fontSize: '1.6rem', color: C.text, margin: 0, fontWeight: 700 }}>
                 {activeTab === 'cgu' ? 'Conditions Générales d\'Utilisation' : 'Politique de Confidentialité'}
               </h1>
-              <p style={{ color: C.light, fontSize: '0.85rem', margin: '4px 0 0', fontFamily: SANS }}>e-Tutorat Sénégal — Mise à jour : 30 avril 2026</p>
+              <p style={{ color: C.light, fontSize: '0.85rem', margin: '4px 0 0', fontFamily: SANS }}>e-Tutorat Sénégal — Mise à jour : 18 mai 2026</p>
             </div>
           </div>
 

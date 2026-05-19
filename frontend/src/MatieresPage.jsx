@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import api from './api.js';
 import {
-  BookOpen, ArrowLeft, Calculator, FlaskConical, Languages, Globe2,
-  Atom, Cpu, BookMarked, Landmark, Coins, Music, Palette, Users,
-  ChevronRight, Search, GraduationCap, ArrowRight,
+  BookOpen, ArrowLeft, Users, ChevronRight, Search, GraduationCap, ArrowRight,
 } from 'lucide-react';
 
 const C = {
@@ -28,10 +27,9 @@ const CATEGORIES = [
     color: '#3B82F6',
     bg: '#EFF6FF',
     matieres: [
-      { icon: Calculator, name: 'Mathématiques', tuteurs: 87, niveaux: ['Primaire', 'Collège', 'Lycée', 'Sup'], desc: 'Algèbre, géométrie, analyse, probabilités' },
-      { icon: FlaskConical, name: 'Physique-Chimie', tuteurs: 54, niveaux: ['Collège', 'Lycée', 'Sup'], desc: 'Mécanique, thermodynamique, chimie organique' },
-      { icon: Atom, name: 'Sciences de la Vie et de la Terre', tuteurs: 41, niveaux: ['Collège', 'Lycée'], desc: 'Biologie, géologie, écologie, génétique' },
-      { icon: FlaskConical, name: 'Chimie', tuteurs: 28, niveaux: ['Lycée', 'Sup'], desc: 'Chimie générale, organique, inorganique' },
+      { name: 'Mathématiques',                     image: '/Mathématique.jpg',    niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Algèbre, géométrie, analyse, probabilités' },
+      { name: 'Physique-Chimie',                   image: '/Physique chimie.jpg', niveaux: ['Collège', 'Lycée'],             desc: 'Mécanique, thermodynamique, chimie organique' },
+      { name: 'Sciences de la Vie et de la Terre', image: '/SVT.jpg', dbKey: 'SVT', niveaux: ['Collège', 'Lycée'],          desc: 'Biologie, géologie, écologie, génétique' },
     ],
   },
   {
@@ -40,11 +38,10 @@ const CATEGORIES = [
     color: '#8B5CF6',
     bg: '#F5F3FF',
     matieres: [
-      { icon: BookMarked, name: 'Français', tuteurs: 72, niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Grammaire, dissertation, littérature, dictée' },
-      { icon: Languages, name: 'Anglais', tuteurs: 65, niveaux: ['Primaire', 'Collège', 'Lycée', 'Sup'], desc: 'Conversation, grammaire, TOEFL, IELTS' },
-      { icon: Globe2, name: 'Arabe', tuteurs: 38, niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Arabe classique, Coran, langue courante' },
-      { icon: Languages, name: 'Espagnol', tuteurs: 22, niveaux: ['Collège', 'Lycée'], desc: 'Grammaire, conversation, DELE' },
-      { icon: Languages, name: 'Wolof', tuteurs: 15, niveaux: ['Primaire', 'Adultes'], desc: 'Langue nationale, alphabet, expression orale' },
+      { name: 'Français',  image: '/Français.jpg',  niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Grammaire, dissertation, littérature, dictée' },
+      { name: 'Anglais',   image: '/Anglais.jpg',   niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Conversation, grammaire, TOEFL, IELTS' },
+      { name: 'Arabe',     image: '/Arabe.jpg',     niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Arabe classique, Coran, langue courante' },
+      { name: 'Espagnol',  image: '/Espagnol.jpg',  niveaux: ['Collège', 'Lycée'],             desc: 'Grammaire, conversation, DELE' },
     ],
   },
   {
@@ -53,10 +50,10 @@ const CATEGORIES = [
     color: '#10B981',
     bg: '#ECFDF5',
     matieres: [
-      { icon: Landmark, name: 'Histoire-Géographie', tuteurs: 46, niveaux: ['Collège', 'Lycée'], desc: 'Histoire du Sénégal, géo mondiale, cartographie' },
-      { icon: BookOpen, name: 'Philosophie', tuteurs: 29, niveaux: ['Lycée'], desc: 'Dissertation, commentaire de texte, argumentation' },
-      { icon: Coins, name: 'Économie', tuteurs: 31, niveaux: ['Lycée', 'Sup'], desc: 'Micro, macro-économie, gestion, comptabilité' },
-      { icon: Landmark, name: 'Éducation civique', tuteurs: 18, niveaux: ['Primaire', 'Collège'], desc: 'Droits et devoirs, institutions sénégalaises' },
+      { name: 'Histoire-Géographie', image: '/Histoire Géograhie.jpg', dbKey: 'Histoire-Géo', niveaux: ['Collège', 'Lycée'], desc: 'Histoire du Sénégal, géo mondiale, cartographie' },
+      { name: 'Philosophie',         image: '/Philosophie.jpg',        niveaux: ['Lycée'],              desc: 'Dissertation, commentaire de texte, argumentation' },
+      { name: 'Économie',            image: '/Economie.jpg',           niveaux: ['Lycée'],              desc: 'Micro, macro-économie, gestion, comptabilité' },
+      { name: 'Éducation civique',   image: '/Education civique.jpg',  niveaux: ['Primaire', 'Collège'], desc: 'Droits et devoirs, institutions sénégalaises' },
     ],
   },
   {
@@ -65,9 +62,7 @@ const CATEGORIES = [
     color: '#F97316',
     bg: '#FFF7ED',
     matieres: [
-      { icon: Cpu, name: 'Informatique', tuteurs: 44, niveaux: ['Collège', 'Lycée', 'Sup'], desc: 'Algorithmique, Python, Excel, bureautique' },
-      { icon: Cpu, name: 'Programmation', tuteurs: 33, niveaux: ['Lycée', 'Sup'], desc: 'Python, JavaScript, Java, développement web' },
-      { icon: Cpu, name: 'Technologie', tuteurs: 19, niveaux: ['Collège'], desc: 'Dessin technique, construction, électronique' },
+      { name: 'Informatique', image: '/Informatique.jpg', niveaux: ['Collège', 'Lycée'], desc: 'Word, Excel, bureautique' },
     ],
   },
   {
@@ -76,24 +71,36 @@ const CATEGORIES = [
     color: '#EC4899',
     bg: '#FDF2F8',
     matieres: [
-      { icon: Music, name: 'Musique', tuteurs: 12, niveaux: ['Primaire', 'Collège'], desc: 'Solfège, guitare, piano, chant' },
-      { icon: Palette, name: 'Arts plastiques', tuteurs: 14, niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Dessin, peinture, arts graphiques' },
-      { icon: GraduationCap, name: 'Soutien scolaire général', tuteurs: 95, niveaux: ['Primaire', 'Collège'], desc: 'Aide aux devoirs, méthode de travail, organisation' },
+      { name: 'Musique',                  image: '/Musique.jpg',          niveaux: ['Primaire', 'Collège'],           desc: 'Solfège, guitare, piano, chant' },
+      { name: 'Arts plastiques',          image: '/Arts plastique.jpg',   niveaux: ['Primaire', 'Collège', 'Lycée'], desc: 'Dessin, peinture, arts graphiques' },
+      { name: 'Soutien scolaire général', image: '/Soutien scolaire.jpg', niveaux: ['Primaire', 'Collège'],           desc: 'Aide aux devoirs, méthode de travail, organisation' },
     ],
   },
 ];
 
-const NIVEAUX_COLORS = {
-  'Primaire': { bg: '#DCFCE7', color: '#16A34A' },
-  'Collège': { bg: '#DBEAFE', color: '#2563EB' },
-  'Lycée': { bg: '#FEF3C7', color: '#D97706' },
-  'Sup': { bg: '#F3E8FF', color: '#9333EA' },
-  'Adultes': { bg: '#FCE7F3', color: '#DB2777' },
-};
 
 export default function MatieresPage({ onGoHome, onTuteurs }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [tuteursByMatiere, setTuteursByMatiere] = useState({});
+  const [totalTuteursAPI, setTotalTuteursAPI] = useState(null);
+
+  useEffect(() => {
+    api.get('/tuteurs').then(data => {
+      const list = Array.isArray(data) ? data : [];
+      setTotalTuteursAPI(list.length);
+      const counts = {};
+      list.forEach(t => {
+        (t.matieres || []).forEach(m => { counts[m] = (counts[m] || 0) + 1; });
+      });
+      setTuteursByMatiere(counts);
+    }).catch(() => {});
+  }, []);
+
+  const getTuteurCount = (m) => {
+    const key = m.dbKey || m.name;
+    return tuteursByMatiere[key] ?? null;
+  };
 
   const filtered = CATEGORIES
     .filter(cat => activeCategory === 'all' || cat.id === activeCategory)
@@ -106,7 +113,6 @@ export default function MatieresPage({ onGoHome, onTuteurs }) {
     .filter(cat => cat.matieres.length > 0);
 
   const totalMatieres = CATEGORIES.reduce((sum, c) => sum + c.matieres.length, 0);
-  const totalTuteurs = CATEGORIES.reduce((sum, c) => c.matieres.reduce((s, m) => s + m.tuteurs, sum), 0);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.background, fontFamily: SANS }}>
@@ -139,13 +145,13 @@ export default function MatieresPage({ onGoHome, onTuteurs }) {
               Toutes les <span style={{ color: C.primary, fontStyle: 'italic' }}>matières</span>
             </h1>
             <p style={{ fontSize: '1.2rem', color: C.muted, maxWidth: '560px', lineHeight: 1.6, margin: '0 0 32px 0' }}>
-              Du CI à la Terminale et au-delà — nos {totalTuteurs}+ tuteurs couvrent toutes les matières du programme sénégalais.
+              Du CI à la Terminale et au-delà — nos tuteurs qualifiés couvrent toutes les matières du programme sénégalais.
             </p>
             {/* Stats */}
             <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
               {[
                 { icon: BookOpen, value: `${totalMatieres}+`, label: 'Matières' },
-                { icon: Users, value: `${totalTuteurs}+`, label: 'Tuteurs qualifiés' },
+                { icon: Users, value: totalTuteursAPI !== null ? `${totalTuteursAPI}` : '—', label: 'Tuteurs inscrits' },
                 { icon: GraduationCap, value: '5', label: 'Niveaux scolaires' },
               ].map(({ icon: Icon, value, label }) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -206,42 +212,48 @@ export default function MatieresPage({ onGoHome, onTuteurs }) {
 
                   {/* Matieres grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '20px' }}>
-                    {cat.matieres.map((m, mi) => {
-                      const Icon = m.icon;
+                    {cat.matieres.map((m) => {
+                      const count = getTuteurCount(m);
                       return (
-                        <motion.div key={m.name} whileHover={{ y: -4, boxShadow: '0 16px 40px rgba(62,42,31,0.1)' }}
-                          style={{ backgroundColor: C.surface, borderRadius: '20px', padding: '28px', border: `1.5px solid ${C.border}`, cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+                        <motion.div key={m.name}
+                          whileHover={{ y: -5, boxShadow: '0 24px 56px rgba(20,10,0,0.22)' }}
+                          style={{ borderRadius: '20px', overflow: 'hidden', position: 'relative', minHeight: '230px', cursor: 'pointer', border: `1.5px solid ${C.border}` }}
                           onClick={onTuteurs}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
-                            <div style={{ width: '52px', height: '52px', borderRadius: '16px', backgroundColor: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <Icon size={26} color={cat.color} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <h3 style={{ fontFamily: SERIF, fontSize: '1.15rem', color: C.text, fontWeight: 700, margin: '0 0 4px 0' }}>{m.name}</h3>
-                              <p style={{ fontSize: '0.88rem', color: C.light, margin: 0, lineHeight: 1.4 }}>{m.desc}</p>
-                            </div>
-                          </div>
 
-                          {/* Niveaux */}
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                            {m.niveaux.map(n => {
-                              const s = NIVEAUX_COLORS[n] || { bg: C.accent, color: C.primary };
-                              return (
-                                <span key={n} style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: '100px', backgroundColor: s.bg, color: s.color }}>
-                                  {n}
-                                </span>
-                              );
-                            })}
-                          </div>
+                          {/* Photo de fond */}
+                          <img src={m.image} alt={m.name}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
 
-                          {/* Footer */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: `1px solid ${C.accent}` }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: C.muted, fontSize: '0.88rem', fontWeight: 600 }}>
-                              <Users size={15} color={C.primary} />
-                              {m.tuteurs} tuteurs disponibles
+                          {/* Overlay dégradé */}
+                          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(15,8,0,0.30) 0%, rgba(15,8,0,0.78) 100%)' }} />
+
+                          {/* Contenu */}
+                          <div style={{ position: 'relative', zIndex: 1, padding: '24px', minHeight: '230px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+
+                            {/* Haut : titre + desc */}
+                            <div>
+                              <h3 style={{ fontFamily: SERIF, fontSize: '1.3rem', color: '#fff', fontWeight: 800, margin: '0 0 8px 0', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{m.name}</h3>
+                              <p style={{ fontFamily: SANS, fontSize: '0.9rem', color: 'rgba(255,255,255,0.92)', margin: 0, lineHeight: 1.5, fontWeight: 500, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{m.desc}</p>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: C.primary, fontWeight: 700, fontSize: '0.88rem' }}>
-                              Voir <ChevronRight size={15} />
+
+                            {/* Bas : niveaux + tuteurs */}
+                            <div>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                                {m.niveaux.map(n => (
+                                  <span key={n} style={{ fontFamily: SANS, fontSize: '0.75rem', fontWeight: 700, padding: '4px 12px', borderRadius: '100px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.35)', letterSpacing: '0.3px' }}>
+                                    {n}
+                                  </span>
+                                ))}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.25)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', fontSize: '0.85rem', fontWeight: 700, fontFamily: SANS, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                                  <Users size={14} color="#FBBF24" />
+                                  {count !== null ? `${count} tuteur${count !== 1 ? 's' : ''}` : 'Tuteurs disponibles'}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FBBF24', fontWeight: 800, fontSize: '0.88rem', fontFamily: SANS, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                                  Voir <ChevronRight size={15} />
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </motion.div>

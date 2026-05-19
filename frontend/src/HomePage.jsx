@@ -226,9 +226,9 @@ const Hero = ({ onInscription, onTuteurs }) => {
         {/* Stats */}
         <div style={{ marginTop: isMobile ? '28px' : '72px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {[
-            { icon: Users, value: '500+', label: 'Tuteurs' },
-            { icon: GraduationCap, value: '10 000+', label: 'Élèves' },
-            { icon: BookOpen, value: '50+', label: 'Matières' },
+            { icon: Users, value: '100%', label: 'Tuteurs vérifiés' },
+            { icon: GraduationCap, value: 'CI → Bac', label: 'Tous niveaux' },
+            { icon: BookOpen, value: '20+', label: 'Matières' },
           ].map(({ icon: Icon, value, label }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.15 }}
               style={{ backgroundColor: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(10px)', padding: isMobile ? '0.8rem 1rem' : '1.4rem 1.8rem', borderRadius: '20px', border: `1px solid ${C.accent}`, flex: '1', minWidth: isMobile ? '0' : '155px', boxShadow: '0 4px 20px rgba(62,42,31,0.04)' }}>
@@ -246,24 +246,8 @@ const Hero = ({ onInscription, onTuteurs }) => {
       {!isMobile && (
         <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: 'circOut' }}
           style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '460px', height: '560px', borderRadius: '40px', overflow: 'hidden', boxShadow: `28px 28px 0px ${C.secondary}`, background: `linear-gradient(135deg, ${C.accent} 0%, rgba(251,191,36,0.18) 100%)`, border: `8px solid ${C.surface}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
-            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }} style={{ fontSize: '110px', marginBottom: '16px' }}>📚</motion.div>
-            <div style={{ height: '4px', width: '80px', backgroundColor: C.primary, margin: '0 auto 16px' }} />
-            <p style={{ fontFamily: SERIF, fontSize: '1.7rem', color: C.text, fontWeight: 700, textAlign: 'center', padding: '0 40px', lineHeight: 1.3 }}>Éducation sans limites</p>
-            <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6, duration: 0.8 }}
-              style={{ position: 'absolute', bottom: '36px', left: '-16px', background: C.surface, padding: '16px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: C.primary, display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '22px', flexShrink: 0 }}>🇸🇳</div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '1rem', color: C.text }}>Moussa Diallo</div>
-                <div style={{ fontSize: '0.85rem', color: C.light }}>Tuteur en Mathématiques</div>
-                <Stars n={5} />
-              </div>
-            </motion.div>
-            <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}
-              style={{ position: 'absolute', top: '28px', right: '-12px', background: C.surface, padding: '10px 16px', borderRadius: '100px', boxShadow: '0 8px 20px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
-              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: C.text }}>12 tuteurs en ligne</span>
-            </motion.div>
+          <div style={{ width: '460px', height: '560px', borderRadius: '40px', overflow: 'hidden', boxShadow: `28px 28px 0px ${C.secondary}`, border: `8px solid ${C.surface}`, position: 'relative' }}>
+            <img src="/Education sans limite.jpg" alt="Éducation sans limites" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         </motion.div>
       )}
@@ -386,18 +370,18 @@ const FeaturedTutors = ({ onTuteurs }) => {
 
 // ─── 5. MATIÈRES ─────────────────────────────────────────────────────────────
 const SUBJECTS = [
-  { icon: Calculator, label: 'Mathématiques', color: '#FEF3C7' },
-  { icon: Atom, label: 'Physique-Chimie', color: '#EDE9FE' },
-  { icon: Languages, label: 'Français', color: '#DCFCE7' },
-  { icon: Globe2, label: 'Anglais', color: '#DBEAFE' },
-  { icon: FlaskConical, label: 'SVT', color: '#FEE2E2' },
-  { icon: Landmark, label: 'Histoire-Géo', color: '#FEF3C7' },
-  { icon: Cpu, label: 'Informatique', color: '#EDE9FE' },
-  { icon: BookMarked, label: 'Arabe', color: '#DCFCE7' },
-  { icon: MessageSquare, label: 'Philosophie', color: '#DBEAFE' },
-  { icon: Coins, label: 'Économie', color: '#FEE2E2' },
-  { icon: GraduationCap, label: 'Espagnol', color: '#FEF3C7' },
-  { icon: BookOpen, label: 'LV2 Arabe', color: '#EDE9FE' },
+  { icon: Calculator, label: 'Mathématiques', color: '#FEF3C7', image: '/Mathématique.jpg' },
+  { icon: Atom, label: 'Physique-Chimie', color: '#EDE9FE', image: '/Physique chimie.jpg' },
+  { icon: Languages, label: 'Français', color: '#DCFCE7', image: '/Français.jpg' },
+  { icon: Globe2, label: 'Anglais', color: '#DBEAFE', image: '/Anglais.jpg' },
+  { icon: FlaskConical, label: 'SVT', color: '#FEE2E2', image: '/SVT.jpg' },
+  { icon: Landmark, label: 'Histoire-Géo', color: '#FEF3C7', image: '/Histoire Géograhie.jpg' },
+  { icon: Cpu, label: 'Informatique', color: '#EDE9FE', image: '/Informatique.jpg' },
+  { icon: BookMarked, label: 'Arabe', color: '#DCFCE7', image: '/Arabe.jpg' },
+  { icon: MessageSquare, label: 'Philosophie', color: '#DBEAFE', image: '/Philosophie.jpg' },
+  { icon: Coins, label: 'Économie', color: '#FEE2E2', image: '/Economie.jpg' },
+  { icon: GraduationCap, label: 'Espagnol', color: '#FEF3C7', image: '/Espagnol.jpg' },
+  { icon: BookOpen, label: 'LV2 Arabe', color: '#EDE9FE', image: '/Arabe.jpg' },
 ];
 
 const Subjects = () => {
@@ -411,14 +395,18 @@ const Subjects = () => {
       </FadeIn>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: isMobile ? '12px' : '20px' }}>
-        {SUBJECTS.map(({ icon: Icon, label, color }, i) => (
+        {SUBJECTS.map(({ icon: Icon, label, image }, i) => (
           <FadeIn key={label} delay={i * 0.05}>
-            <motion.div whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(62,42,31,0.1)' }}
-              style={{ background: C.surface, borderRadius: '20px', padding: isMobile ? '16px 8px' : '28px 16px', textAlign: 'center', border: `1px solid ${C.accent}`, boxShadow: '0 4px 16px rgba(62,42,31,0.04)', cursor: 'pointer' }}>
-              <div style={{ width: isMobile ? '44px' : '56px', height: isMobile ? '44px' : '56px', borderRadius: '16px', backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', boxShadow: `0 4px 12px rgba(0,0,0,0.06)` }}>
-                <Icon size={isMobile ? 22 : 28} color={C.primary} />
+            <motion.div whileHover={{ y: -6, boxShadow: '0 20px 48px rgba(62,42,31,0.18)' }}
+              style={{ borderRadius: '20px', overflow: 'hidden', position: 'relative', height: isMobile ? '110px' : '160px', border: `1px solid ${C.accent}`, boxShadow: '0 4px 16px rgba(62,42,31,0.06)', cursor: 'pointer' }}>
+              <img src={image} alt={label} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(20,8,0,0.85) 0%, rgba(20,8,0,0.25) 55%, transparent 100%)' }} />
+              <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: isMobile ? '8px 4px' : '14px 8px', textAlign: 'center' }}>
+                <div style={{ width: isMobile ? '28px' : '38px', height: isMobile ? '28px' : '38px', borderRadius: '10px', backgroundColor: 'rgba(249,115,22,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '5px', flexShrink: 0 }}>
+                  <Icon size={isMobile ? 14 : 19} color="#fff" />
+                </div>
+                <div style={{ fontSize: isMobile ? '0.65rem' : '0.82rem', fontWeight: 700, color: '#fff', lineHeight: 1.25 }}>{label}</div>
               </div>
-              <div style={{ fontSize: isMobile ? '0.75rem' : '0.95rem', fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{label}</div>
             </motion.div>
           </FadeIn>
         ))}
@@ -486,7 +474,7 @@ const CtaBanner = ({ onInscription }) => {
         Prêt à transformer l'avenir de votre enfant ?
       </h2>
       <p style={{ fontSize: '1.3rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.6, marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
-        Rejoignez plus de 10 000 familles sénégalaises qui font confiance à e-Tutorat pour la réussite de leurs enfants.
+        Rejoignez les premières familles sénégalaises qui font confiance à e-Tutorat pour la réussite de leurs enfants.
       </p>
       <div style={{ display: 'flex', gap: isMobile ? '12px' : '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
         <motion.button whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97 }} onClick={onInscription}
@@ -511,11 +499,43 @@ const CtaBanner = ({ onInscription }) => {
 };
 
 // ─── 8. FOOTER ───────────────────────────────────────────────────────────────
-const Footer = ({ onLegal }) => {
+const SOCIAL_LINKS = [
+  { Icon: Send, href: 'https://wa.me/221783476174', label: 'WhatsApp' },
+];
+
+const Footer = ({ onLegal, onTuteurs, onInscription, onBlog, onMatieres }) => {
   const isMobile = useIsMobile();
+  const [newsletter, setNewsletter] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleNewsletter = () => {
+    if (newsletter.includes('@')) {
+      setSubscribed(true);
+      setNewsletter('');
+      setTimeout(() => setSubscribed(false), 4000);
+    }
+  };
+
+  const QUICK_LINKS = [
+    { label: 'Trouver un tuteur', action: onTuteurs },
+    { label: 'Devenir tuteur',    action: onInscription },
+    { label: 'Blog',              action: onBlog },
+    { label: 'Matières',          action: onMatieres },
+    { label: 'Nous contacter',    action: () => { window.location.href = 'mailto:etutorat2026@gmail.com'; } },
+  ];
+
+  const CONTACT_ITEMS = [
+    { icon: Mail,  text: 'etutorat2026@gmail.com', href: 'mailto:etutorat2026@gmail.com' },
+    { icon: Phone, text: '+221 78 347 61 74',       href: 'tel:+221783476174' },
+    { icon: MapPin, text: 'Dakar, Sénégal',         href: null },
+  ];
+
+  const linkStyle = { marginBottom: '12px', cursor: 'pointer', transition: 'color 0.2s', color: 'rgba(255,253,245,0.7)' };
+
   return (
   <footer style={{ backgroundColor: C.text, color: 'rgba(255,253,245,0.7)', fontFamily: SANS }}>
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '48px 5% 32px' : '80px 5% 48px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr 1.4fr', gap: isMobile ? '36px' : '60px' }}>
+
       {/* Brand */}
       <div>
         <div style={{ marginBottom: '20px' }}>
@@ -525,51 +545,78 @@ const Footer = ({ onLegal }) => {
           La première plateforme de tutorat en ligne dédiée aux élèves sénégalais. Du CI à la Terminale.
         </p>
         <div style={{ display: 'flex', gap: '14px' }}>
-          {[Share2, ExternalLink, Send].map((Icon, i) => (
-            <div key={i} style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255,253,245,0.08)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-              <Icon size={20} color="rgba(255,253,245,0.7)" />
-            </div>
+          {SOCIAL_LINKS.map(({ Icon, href, label }) => (
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+              style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255,253,245,0.08)', display: 'grid', placeItems: 'center', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(249,115,22,0.3)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,253,245,0.08)'}>
+              <Icon size={20} color="rgba(255,253,245,0.8)" />
+            </a>
           ))}
         </div>
       </div>
 
-      {/* Links */}
+      {/* Liens rapides */}
       <div>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: C.secondary, marginBottom: '20px' }}>Liens rapides</div>
-        {['Trouver un tuteur', 'Devenir tuteur', 'Blog', 'À propos', 'Contact'].map(l => (
-          <div key={l} style={{ marginBottom: '12px', cursor: 'pointer', transition: 'color 0.2s' }}
-            onMouseEnter={e => e.target.style.color = C.secondary}
-            onMouseLeave={e => e.target.style.color = 'rgba(255,253,245,0.7)'}>{l}</div>
+        {QUICK_LINKS.map(({ label, action }) => (
+          <div key={label} onClick={action} style={linkStyle}
+            onMouseEnter={e => e.currentTarget.style.color = C.secondary}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,253,245,0.7)'}>
+            {label}
+          </div>
         ))}
       </div>
 
-      {/* Subjects */}
+      {/* Matières */}
       <div>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: C.secondary, marginBottom: '20px' }}>Matières populaires</div>
         {['Mathématiques', 'Physique-Chimie', 'Français', 'Anglais', 'SVT', 'Histoire-Géo'].map(s => (
-          <div key={s} style={{ marginBottom: '12px', cursor: 'pointer' }}>{s}</div>
+          <div key={s} onClick={onMatieres} style={linkStyle}
+            onMouseEnter={e => e.currentTarget.style.color = C.secondary}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,253,245,0.7)'}>
+            {s}
+          </div>
         ))}
       </div>
 
       {/* Contact */}
       <div>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: C.secondary, marginBottom: '20px' }}>Contact</div>
-        {[
-          { icon: Mail, text: 'contact@etutorat.sn' },
-          { icon: Phone, text: '+221 77 000 00 00' },
-          { icon: MapPin, text: 'Dakar, Sénégal' },
-        ].map(({ icon: Icon, text }) => (
+        {CONTACT_ITEMS.map(({ icon: Icon, text, href }) => (
           <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-            <Icon size={18} color={C.primary} />
-            <span>{text}</span>
+            <Icon size={18} color={C.primary} style={{ flexShrink: 0 }} />
+            {href ? (
+              <a href={href} style={{ color: 'rgba(255,253,245,0.7)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.target.style.color = C.secondary}
+                onMouseLeave={e => e.target.style.color = 'rgba(255,253,245,0.7)'}>{text}</a>
+            ) : (
+              <span>{text}</span>
+            )}
           </div>
         ))}
+
         <div style={{ marginTop: '28px' }}>
           <div style={{ fontSize: '0.85rem', fontWeight: 700, color: C.secondary, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Newsletter</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input placeholder="Votre email" style={{ flex: 1, minWidth: 0, padding: '10px 16px', borderRadius: '100px', border: '1px solid rgba(255,253,245,0.15)', backgroundColor: 'rgba(255,253,245,0.06)', color: '#FFFDF5', fontSize: '0.9rem', outline: 'none', fontFamily: SANS }} />
-            <button style={{ padding: '10px 16px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>OK</button>
-          </div>
+          {subscribed ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4ADE80', fontWeight: 600, fontSize: '0.95rem' }}>
+              <Check size={18} /> Merci, vous êtes inscrit(e) !
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                value={newsletter}
+                onChange={e => setNewsletter(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleNewsletter()}
+                placeholder="Votre email"
+                style={{ flex: 1, minWidth: 0, padding: '10px 16px', borderRadius: '100px', border: '1px solid rgba(255,253,245,0.15)', backgroundColor: 'rgba(255,253,245,0.06)', color: '#FFFDF5', fontSize: '0.9rem', outline: 'none', fontFamily: SANS }}
+              />
+              <button onClick={handleNewsletter}
+                style={{ padding: '10px 18px', borderRadius: '100px', border: 'none', backgroundColor: C.primary, color: '#fff', cursor: 'pointer', fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>
+                OK
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -578,8 +625,14 @@ const Footer = ({ onLegal }) => {
     <div style={{ borderTop: '1px solid rgba(255,253,245,0.08)', padding: '24px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1400px', margin: '0 auto', flexWrap: 'wrap', gap: '12px' }}>
       <span style={{ fontSize: '0.9rem' }}>© 2026 e-Tutorat Sénégal. Tous droits réservés.</span>
       <div style={{ display: 'flex', gap: '24px', fontSize: '0.9rem' }}>
-        <span style={{ cursor: 'pointer' }} onClick={() => onLegal?.('privacy')}>Confidentialité</span>
-        <span style={{ cursor: 'pointer' }} onClick={() => onLegal?.('cgu')}>CGU</span>
+        <span style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+          onClick={() => onLegal?.('privacy')}
+          onMouseEnter={e => e.target.style.color = C.secondary}
+          onMouseLeave={e => e.target.style.color = 'rgba(255,253,245,0.7)'}>Confidentialité</span>
+        <span style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+          onClick={() => onLegal?.('cgu')}
+          onMouseEnter={e => e.target.style.color = C.secondary}
+          onMouseLeave={e => e.target.style.color = 'rgba(255,253,245,0.7)'}>CGU</span>
       </div>
     </div>
 
@@ -610,7 +663,7 @@ export default function HomePage({ onInscription, onConnexion, onTuteurs, onMati
       <Subjects />
       <Testimonials />
       <CtaBanner onInscription={onInscription} />
-      <Footer onLegal={onLegal} />
+      <Footer onLegal={onLegal} onTuteurs={onTuteurs} onInscription={onInscription} onBlog={onBlog} onMatieres={onMatieres} />
     </>
   );
 }

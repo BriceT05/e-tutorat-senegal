@@ -6,6 +6,7 @@ const prisma = require('../prisma');
 const { sendEmail } = require('../emails/sender');
 const T = require('../emails/templates');
 const { push } = require('../services/push');
+const { sendSms } = require('../services/sms');
 const validate = require('../middleware/validate');
 const S = require('../schemas');
 
@@ -19,6 +20,31 @@ const safeUser = (u) => {
 };
 
 const frontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// ─── Helper OTP : génère, stocke et envoie un code à 6 chiffres ────────────────
+async function createAndSendOtp(user) {
+  await prisma.$executeRaw`
+    UPDATE login_otps SET used = true
+    WHERE email = ${user.email} AND used = false
+  `;
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const hashed = await bcrypt.hash(code, 8);
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+  await prisma.$executeRaw`
+    INSERT INTO login_otps (id, email, code, "expiresAt")
+    VALUES (gen_random_uuid(), ${user.email}, ${hashed}, ${expiresAt})
+  `;
+  Promise.all([
+    sendEmail({
+      to: user.email,
+      subject: `${code} — Votre code de vérification e-Tutorat`,
+      html: T.otpEmail({ prenom: user.prenom, code }),
+    }),
+    user.tel
+      ? sendSms(user.tel, `e-Tutorat : votre code de vérification est ${code}. Valable 5 minutes.`)
+      : Promise.resolve(),
+  ]).catch(err => console.error('[OTP SEND]', err));
+}
 
 // ─── Rate limiting in-memory ────────────────────────────────────────────────────
 const _rl = new Map();
@@ -38,7 +64,6 @@ function rateLimit(max, windowMs) {
     next();
   };
 }
-// Nettoyage périodique pour éviter les fuites mémoire
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of _rl) if (now - v.t > 30 * 60 * 1000) _rl.delete(k);
@@ -53,14 +78,12 @@ router.post('/register', rateLimit(10, 60 * 60 * 1000), validate(S.registerSchem
     if (exists) return res.status(409).json({ error: 'Email déjà utilisé' });
 
     const hash = await bcrypt.hash(password, 10);
-    const verifyToken = crypto.randomBytes(32).toString('hex');
 
     const user = await prisma.user.create({
       data: {
         prenom, nom, email,
         password: hash,
         role: role.toUpperCase(),
-        emailVerifyToken: verifyToken,
         ...profile,
         matieres: profile.matieres || [],
         niveaux: profile.niveaux || [],
@@ -73,28 +96,20 @@ router.post('/register', rateLimit(10, 60 * 60 * 1000), validate(S.registerSchem
         type: 'system',
         emoji: '🎉',
         title: 'Bienvenue sur e-Tutorat !',
-        body: 'Votre compte est créé. Vérifiez votre email pour l\'activer.',
+        body: 'Votre compte est créé. Entrez le code reçu pour l\'activer.',
       },
     });
     push(user.id, welcomeNotif);
 
-    const verifyUrl = `${frontendUrl()}?verify=${verifyToken}`;
+    sendEmail({
+      to: email,
+      subject: `Bienvenue sur e-Tutorat Sénégal, ${prenom} ! 🎉`,
+      html: T.welcomeEmail({ prenom, role: user.role }),
+    }).catch(err => console.error('[EMAIL WELCOME]', err));
 
-    // Emails envoyés en arrière-plan — ne bloquent jamais la réponse
-    Promise.all([
-      sendEmail({
-        to: email,
-        subject: `Bienvenue sur e-Tutorat Sénégal, ${prenom} ! 🎉`,
-        html: T.welcomeEmail({ prenom, role: user.role }),
-      }),
-      sendEmail({
-        to: email,
-        subject: 'Vérifiez votre adresse email — e-Tutorat Sénégal',
-        html: T.verifyEmail({ prenom, url: verifyUrl }),
-      }),
-    ]).catch(err => console.error('[EMAIL REGISTER]', err));
+    await createAndSendOtp(user);
 
-    res.status(201).json({ token: sign(user), user: safeUser(user) });
+    res.status(201).json({ needsVerification: true, email });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -112,6 +127,15 @@ router.post('/login', rateLimit(10, 15 * 60 * 1000), validate(S.loginSchema), as
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
+    if (!user.emailVerified) {
+      await createAndSendOtp(user);
+      return res.status(403).json({
+        error: 'Veuillez vérifier votre email. Un code de vérification vous a été envoyé.',
+        needsVerification: true,
+        email: user.email,
+      });
+    }
+
     res.json({ token: sign(user), user: safeUser(user) });
   } catch (err) {
     console.error(err);
@@ -125,30 +149,32 @@ router.post('/otp/send', rateLimit(5, 15 * 60 * 1000), validate(S.otpSendSchema)
     const { email } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
-    // Réponse générique même si l'email n'existe pas (sécurité)
     if (!user) return res.json({ ok: true });
 
-    // Invalider les anciens OTP pour cet email
     await prisma.$executeRaw`
       UPDATE login_otps SET used = true
       WHERE email = ${email} AND used = false
     `;
 
-    // Générer le code à 6 chiffres
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const hashed = await bcrypt.hash(code, 8);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await prisma.$executeRaw`
       INSERT INTO login_otps (id, email, code, "expiresAt")
       VALUES (gen_random_uuid(), ${email}, ${hashed}, ${expiresAt})
     `;
 
-    await sendEmail({
-      to: email,
-      subject: `${code} — Votre code de connexion e-Tutorat`,
-      html: T.otpEmail({ prenom: user.prenom, code }),
-    });
+    Promise.all([
+      sendEmail({
+        to: email,
+        subject: `${code} — Votre code de connexion e-Tutorat`,
+        html: T.otpEmail({ prenom: user.prenom, code }),
+      }),
+      user.tel
+        ? sendSms(user.tel, `e-Tutorat : votre code est ${code}. Valable 5 minutes.`)
+        : Promise.resolve(),
+    ]).catch(err => console.error('[OTP SEND]', err));
 
     res.json({ ok: true });
   } catch (err) {
@@ -162,7 +188,6 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
   try {
     const { email, code } = req.body;
 
-    // Récupérer le dernier OTP valide pour cet email
     const rows = await prisma.$queryRaw`
       SELECT * FROM login_otps
       WHERE email = ${email}
@@ -175,7 +200,6 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
     const otp = rows[0];
     if (!otp) return res.status(400).json({ error: 'Code invalide ou expiré' });
 
-    // Limiter les tentatives (max 5 par OTP)
     if (otp.attempts >= 5) {
       await prisma.$executeRaw`
         UPDATE login_otps SET used = true WHERE id = ${otp.id}
@@ -191,10 +215,14 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
       return res.status(401).json({ error: 'Code incorrect' });
     }
 
-    // Invalider l'OTP
     await prisma.$executeRaw`
       UPDATE login_otps SET used = true WHERE id = ${otp.id}
     `;
+
+    await prisma.user.update({
+      where: { email },
+      data: { emailVerified: true, emailVerifyToken: null },
+    });
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
@@ -298,17 +326,8 @@ router.post('/resend-verify', require('../middleware/auth'), async (req, res) =>
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
     if (user.emailVerified) return res.json({ message: 'Email déjà vérifié' });
 
-    const verifyToken = crypto.randomBytes(32).toString('hex');
-    await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: verifyToken } });
-
-    const verifyUrl = `${frontendUrl()}?verify=${verifyToken}`;
-    sendEmail({
-      to: user.email,
-      subject: 'Vérifiez votre adresse email — e-Tutorat Sénégal',
-      html: T.verifyEmail({ prenom: user.prenom, url: verifyUrl }),
-    }).catch(err => console.error('[EMAIL VERIFY]', err));
-
-    res.json({ message: 'Email de vérification renvoyé !' });
+    await createAndSendOtp(user);
+    res.json({ message: 'Code de vérification renvoyé !' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

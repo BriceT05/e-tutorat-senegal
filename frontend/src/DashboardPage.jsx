@@ -10,8 +10,8 @@ import {
   MessageSquare, Send, Search,
 } from 'lucide-react';
 
-const SUPABASE_URL = 'https://kaswaniznskuwgwkttsa.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imthc3dhbml6bnNrdXdnd2t0dHNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzU5ODcsImV4cCI6MjA5MzA1MTk4N30.JcCnqJYXVKvh5KHpBSAeyeMntS0kQck0Ftr7cmQDmDY';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
@@ -319,8 +319,8 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
 // ─── MON PROFIL ───────────────────────────────────────────────────────────────
 const PF_REGIONS = ['Dakar', 'Thiès', 'Saint-Louis', 'Ziguinchor', 'Kaolack', 'Touba', 'Mbour', 'Diourbel', 'Tambacounda', 'Kolda', 'Matam', 'Fatick', 'Kaffrine', 'Kédougou', 'Sédhiou'];
 const PF_MATIERES = ['Mathématiques', 'Physique-Chimie', 'Français', 'Anglais', 'SVT', 'Histoire-Géo', 'Informatique', 'Arabe', 'Philosophie', 'Économie', 'Espagnol', 'LV2 Arabe'];
-const PF_NIVEAUX_ELEVE = ['CI','CP','CE1','CE2','CM1','CM2','6ème','5ème','4ème','3ème','2nde','1ère','Terminale','Supérieur'];
-const PF_NIVEAUX_TUTEUR = ['Primaire (CI–CM2)', 'Collège (6ème–3ème)', 'Lycée (2nde–Tle)', 'Supérieur'];
+const PF_NIVEAUX_ELEVE = ['CI','CP','CE1','CE2','CM1','CM2','6ème','5ème','4ème','3ème','2nde','1ère','Terminale'];
+const PF_NIVEAUX_TUTEUR = ['Primaire (CI–CM2)', 'Collège (6ème–3ème)', 'Lycée (2nde–Tle)'];
 const PF_DIPLOMES = ['BFEM', 'BAC', 'BTS', 'Licence', 'Master', 'Doctorat', 'Autre'];
 const PF_MODES = ['En ligne', 'À domicile', 'Les deux'];
 const PF_LANGUES = ['Wolof', 'Français', 'Anglais', 'Arabe', 'Pulaar', 'Sérère', 'Diola', 'Mandingue', 'Espagnol'];

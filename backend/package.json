@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^8.0.7",
     "prisma": "^5.22.0",
+    "twilio": "^4.23.0",
     "zod": "^4.4.2"
   },
   "devDependencies": {

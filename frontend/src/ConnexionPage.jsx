@@ -137,6 +137,7 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [otpCountdown, setOtpCountdown] = useState(0);  // secondes avant renvoyer
+  const [verifyRequired, setVerifyRequired] = useState(false); // email non vérifié
 
   const focus = e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)'; };
   const blur = (err) => e => { e.target.style.borderColor = err ? C.error : C.border; e.target.style.boxShadow = 'none'; };
@@ -182,7 +183,13 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
     const slowTimer = setTimeout(() => setSlowLoading(true), 5000);
     try {
       const data = await api.post('/auth/login', { email, password });
-      if (data.error) {
+      if (data.needsVerification) {
+        setOtpEmail(data.email || email);
+        setOtpMode(true);
+        setOtpSent(true);
+        setVerifyRequired(true);
+        startCountdown(60);
+      } else if (data.error) {
         setErrors({ email: data.error });
       } else {
         onSuccess?.(data.token, data.user);
@@ -328,9 +335,9 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <span style={{ fontWeight: 800, fontSize: '0.95rem', color: C.text }}>
-                    {otpSent ? '🔢 Entrez votre code' : '📧 Connexion par code email'}
+                    {otpSent ? (verifyRequired ? '🔐 Vérifiez votre email' : '🔢 Entrez votre code') : '📧 Connexion par code email'}
                   </span>
-                  <button onClick={() => { setOtpMode(false); setOtpSent(false); setOtpCode(''); setOtpError(''); }}
+                  <button onClick={() => { setOtpMode(false); setOtpSent(false); setOtpCode(''); setOtpError(''); setVerifyRequired(false); }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.light }}>
                     <X size={16} />
                   </button>
@@ -358,7 +365,10 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
                 ) : (
                   <>
                     <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: C.muted, lineHeight: 1.5 }}>
-                      Code envoyé à <strong>{otpEmail}</strong>. Valable <strong>10 min</strong>.
+                      {verifyRequired
+                        ? <>Votre compte n'est pas encore vérifié. Code envoyé à <strong>{otpEmail}</strong>.</>
+                        : <>Code envoyé à <strong>{otpEmail}</strong>. Valable <strong>5 min</strong>.</>
+                      }
                     </p>
                     <input type="text" value={otpCode} onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
                       placeholder="_ _ _ _ _ _" maxLength={6}

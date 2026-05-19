@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useIsMobile from './useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from './api';
@@ -26,7 +26,7 @@ const SANS = '"Inter", sans-serif';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const REGIONS = ['Dakar', 'Thiès', 'Saint-Louis', 'Ziguinchor', 'Kaolack', 'Touba', 'Mbour', 'Diourbel', 'Tambacounda', 'Kolda', 'Matam', 'Fatick', 'Kaffrine', 'Kédougou', 'Sédhiou'];
-const NIVEAUX = ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale', 'Supérieur'];
+const NIVEAUX = ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'];
 const MATIERES = ['Mathématiques', 'Physique-Chimie', 'Français', 'Anglais', 'SVT', 'Histoire-Géo', 'Informatique', 'Arabe', 'Philosophie', 'Économie', 'Espagnol', 'LV2 Arabe'];
 const DIPLOMES = ['BFEM', 'BAC', 'BTS', 'Licence', 'Master', 'Doctorat', 'Autre'];
 
@@ -142,7 +142,7 @@ const PasswordInput = ({ label, required, value, onChange, error, placeholder })
 };
 
 // ─── Stepper ──────────────────────────────────────────────────────────────────
-const STEPS_LABELS = ['Profil', 'Infos personnelles', 'Détails', 'Confirmation'];
+const STEPS_LABELS = ['Profil', 'Infos personnelles', 'Détails', 'Vérification'];
 
 const Stepper = ({ step }) => {
   const isMobile = useIsMobile();
@@ -239,8 +239,8 @@ const Step2 = ({ data, set, errors }) => {
     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
       <InputField icon={User} label="Prénom" required value={data.prenom} onChange={e => set('prenom', e.target.value)} placeholder="Moussa" error={errors.prenom} />
       <InputField icon={User} label="Nom de famille" required value={data.nom} onChange={e => set('nom', e.target.value)} placeholder="Diallo" error={errors.nom} />
-      <InputField icon={Mail} label="Adresse email" required type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="moussa@email.com" error={errors.email} />
-      <InputField icon={Phone} label="Téléphone" required value={data.tel} onChange={e => set('tel', e.target.value)} placeholder="+221 77 000 00 00" error={errors.tel} />
+      <InputField icon={Mail} label="Adresse email" required type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="exemple@gmail.com" error={errors.email} />
+      <InputField icon={Phone} label="Téléphone" required value={data.tel} onChange={e => set('tel', e.target.value)} placeholder="+221 78 347 61 74" error={errors.tel} />
       <div style={{ gridColumn: '1 / -1' }}>
         <PasswordField label="Mot de passe" required value={data.password} onChange={e => set('password', e.target.value)} error={errors.password} />
       </div>
@@ -367,7 +367,7 @@ const Step3Tuteur = ({ data, set, errors }) => {
             Niveaux enseignés <span style={{ color: C.primary }}>*</span>
           </label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            {['Primaire (CI–CM2)', 'Collège (6ème–3ème)', 'Lycée (2nde–Tle)', 'Supérieur'].map(n => {
+            {['Primaire (CI–CM2)', 'Collège (6ème–3ème)', 'Lycée (2nde–Tle)'].map(n => {
               const active = (data.niveaux || []).includes(n);
               return (
                 <motion.button key={n} type="button" onClick={() => toggleNiveau(n)} whileTap={{ scale: 0.96 }}
@@ -396,7 +396,118 @@ const Step3Tuteur = ({ data, set, errors }) => {
   );
 };
 
-// ─── ÉTAPE 4 — Succès ─────────────────────────────────────────────────────────
+// ─── ÉTAPE 4 — Vérification OTP ──────────────────────────────────────────────
+const Step4OTP = ({ email, onVerified }) => {
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [countdown, setCountdown] = useState(60);
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const iv = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 0), 1000);
+    return () => clearInterval(iv);
+  }, [countdown]);
+
+  const resend = async () => {
+    setResending(true); setError('');
+    try {
+      const data = await api.post('/auth/otp/send', { email });
+      if (data.error) { setError(data.error); return; }
+      setCountdown(60); setCode('');
+    } catch { setError('Erreur lors du renvoi. Réessayez.'); }
+    finally { setResending(false); }
+  };
+
+  const verify = async () => {
+    if (code.length !== 6) { setError('Entrez le code à 6 chiffres'); return; }
+    setLoading(true); setError('');
+    try {
+      const data = await api.post('/auth/otp/verify', { email, code });
+      if (data.error) { setError(data.error); return; }
+      onVerified(data.token, data.user);
+    } catch { setError('Erreur de vérification. Réessayez.'); }
+    finally { setLoading(false); }
+  };
+
+  const maskedEmail = email.replace(/(.{2}).+(@.+)/, '$1***$2');
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}
+      style={{ textAlign: 'center' }}>
+
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>📱</div>
+        <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', color: C.text, margin: '0 0 12px', fontWeight: 700 }}>
+          Vérifiez votre <span style={{ color: C.primary, fontStyle: 'italic' }}>email</span>
+        </h2>
+        <p style={{ fontSize: '1rem', color: C.muted, fontFamily: SANS, lineHeight: 1.6, margin: 0 }}>
+          Un code à 6 chiffres a été envoyé à<br />
+          <strong style={{ color: C.text }}>{maskedEmail}</strong>
+        </p>
+      </div>
+
+      {/* 6-box OTP input */}
+      <div style={{ position: 'relative', marginBottom: '24px', display: 'inline-block', width: '100%' }}>
+        <input
+          type="text" inputMode="numeric" value={code} autoFocus
+          onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+          onKeyDown={e => e.key === 'Enter' && code.length === 6 && verify()}
+          style={{ position: 'absolute', inset: 0, opacity: 0, zIndex: 1, cursor: 'text', width: '100%', height: '100%' }}
+        />
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', pointerEvents: 'none' }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} style={{
+              width: '52px', height: '64px', borderRadius: '14px', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              border: `2.5px solid ${i === code.length ? C.primary : code[i] ? C.primary : C.border}`,
+              backgroundColor: code[i] ? C.accent : C.surface,
+              fontSize: '2rem', fontWeight: 900, color: C.primary, fontFamily: 'monospace',
+              boxShadow: i === code.length ? `0 0 0 3px rgba(249,115,22,0.18)` : 'none',
+              transition: 'all 0.15s',
+            }}>
+              {code[i] || ''}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderRadius: '12px', backgroundColor: '#FEF2F2', border: '1.5px solid #FECACA', marginBottom: '16px' }}>
+          <span style={{ fontSize: '1rem' }}>⚠️</span>
+          <span style={{ color: C.error, fontSize: '0.9rem', fontWeight: 600, fontFamily: SANS }}>{error}</span>
+        </div>
+      )}
+
+      <motion.button onClick={verify} disabled={loading || code.length !== 6}
+        whileHover={!loading && code.length === 6 ? { scale: 1.03, y: -2 } : {}}
+        whileTap={!loading && code.length === 6 ? { scale: 0.97 } : {}}
+        style={{
+          width: '100%', padding: '14px 20px', borderRadius: '14px', border: 'none',
+          backgroundColor: (!loading && code.length === 6) ? C.primary : C.border,
+          color: '#fff', fontSize: '1.05rem', fontWeight: 700,
+          cursor: (!loading && code.length === 6) ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+          boxShadow: (!loading && code.length === 6) ? '0 10px 25px rgba(249,115,22,0.35)' : 'none',
+          fontFamily: SANS, marginBottom: '16px', transition: 'all 0.2s',
+        }}>
+        {loading ? (
+          <><div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Vérification…</>
+        ) : (
+          <>Vérifier mon compte <CheckCircle2 size={20} /></>
+        )}
+      </motion.button>
+
+      <button onClick={resend} disabled={countdown > 0 || resending}
+        style={{ background: 'none', border: 'none', color: (countdown > 0 || resending) ? C.light : C.primary, fontWeight: 600, fontSize: '0.9rem', cursor: (countdown > 0 || resending) ? 'default' : 'pointer', fontFamily: SANS }}>
+        {resending ? 'Envoi…' : countdown > 0 ? `Renvoyer le code (${countdown}s)` : 'Renvoyer le code'}
+      </button>
+    </motion.div>
+  );
+};
+
+// ─── ÉTAPE 5 — Succès ─────────────────────────────────────────────────────────
 const StepSuccess = ({ role, prenom, onGoHome, onSuccess }) => (
   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: 'backOut' }}
     style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -505,8 +616,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
           setSubmitError(data.error);
           return;
         }
-        setSavedUser(data.user);
-        setSavedToken(data.token);
+        // data.needsVerification: true → go to OTP step
       } catch {
         setSubmitError('Erreur de connexion au serveur. Réessayez.');
         return;
@@ -527,7 +637,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.background, fontFamily: SANS, position: 'relative', overflow: 'hidden' }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700;800;900&display=swap'); *, *::before, *::after { box-sizing: border-box; }`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700;800;900&display=swap'); *, *::before, *::after { box-sizing: border-box; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <GeoPatter />
 
       {/* Gold glow */}
@@ -550,17 +660,22 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
       {/* Main content */}
       <main style={{ position: 'relative', zIndex: 5, maxWidth: '780px', margin: '0 auto', padding: isMobile ? '28px 16px 100px' : '60px 24px 100px' }}>
 
-        {step < 4 && <Stepper step={step} />}
+        {step < 5 && <Stepper step={step} />}
 
-        <div style={{ backgroundColor: step < 4 ? C.surface : 'transparent', borderRadius: isMobile ? '20px' : '32px', padding: step < 4 ? (isMobile ? '28px 20px' : '52px 56px') : '0', boxShadow: step < 4 ? '0 8px 48px rgba(62,42,31,0.08)' : 'none', border: step < 4 ? `1px solid ${C.accent}` : 'none', position: 'relative', overflow: 'hidden' }}>
-          {step < 4 && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />}
+        <div style={{ backgroundColor: step < 5 ? C.surface : 'transparent', borderRadius: isMobile ? '20px' : '32px', padding: step < 5 ? (isMobile ? '28px 20px' : '52px 56px') : '0', boxShadow: step < 5 ? '0 8px 48px rgba(62,42,31,0.08)' : 'none', border: step < 5 ? `1px solid ${C.accent}` : 'none', position: 'relative', overflow: 'hidden' }}>
+          {step < 5 && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: `linear-gradient(90deg, ${C.primary}, ${C.secondary})` }} />}
 
           <AnimatePresence mode="wait">
             {step === 1 && <Step1 key="s1" role={role} setRole={setRole} />}
             {step === 2 && <Step2 key="s2" data={info} set={setI} errors={errors} />}
             {step === 3 && role === 'eleve' && <Step3Eleve key="s3e" data={profile} set={setP} errors={errors} />}
             {step === 3 && role === 'tuteur' && <Step3Tuteur key="s3t" data={profile} set={setP} errors={errors} />}
-            {step === 4 && <StepSuccess key="s4" role={role} prenom={info.prenom} onGoHome={onGoHome} onSuccess={() => onSuccess?.(savedToken, savedUser)} />}
+            {step === 4 && (
+              <Step4OTP key="s4" email={info.email}
+                onVerified={(token, user) => { setSavedToken(token); setSavedUser(user); setStep(5); }}
+              />
+            )}
+            {step === 5 && <StepSuccess key="s5" role={role} prenom={info.prenom} onGoHome={onGoHome} onSuccess={() => onSuccess?.(savedToken, savedUser)} />}
           </AnimatePresence>
 
           {/* Erreur inscription */}
@@ -579,7 +694,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
                 <ArrowLeft size={18} /> Précédent
               </button>
 
-              <div style={{ fontSize: '0.9rem', color: C.light, fontFamily: SANS }}>Étape {step} sur 3</div>
+              <div style={{ fontSize: '0.9rem', color: C.light, fontFamily: SANS }}>Étape {step} sur 4</div>
 
               <motion.button onClick={next} disabled={loading} whileHover={canNext && !loading ? { scale: 1.03, y: -2 } : {}} whileTap={canNext && !loading ? { scale: 0.97 } : {}}
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 32px', borderRadius: '100px', border: 'none', backgroundColor: canNext && !loading ? C.primary : C.border, color: '#fff', fontSize: '1.05rem', fontWeight: 700, cursor: canNext && !loading ? 'pointer' : 'default', boxShadow: canNext && !loading ? '0 10px 25px rgba(249,115,22,0.35)' : 'none', fontFamily: SANS, transition: 'all 0.2s' }}>
@@ -598,7 +713,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
         </div>
 
         {/* Trust badges */}
-        {step < 4 && (
+        {step < 5 && (
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '28px', flexWrap: 'wrap' }}>
             {['🔒 100% sécurisé', '✅ Inscription gratuite', '🇸🇳 Données hébergées au Sénégal'].map(b => (
               <span key={b} style={{ fontSize: isMobile ? '0.82rem' : '0.9rem', color: C.light, fontFamily: SANS, fontWeight: 500, textAlign: 'center' }}>{b}</span>

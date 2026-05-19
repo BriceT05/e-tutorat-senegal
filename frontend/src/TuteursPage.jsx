@@ -38,7 +38,7 @@ const normalizeTuteur = (u) => ({
 });
 
 const MATIERES_LIST = ['Mathématiques', 'Physique-Chimie', 'Français', 'Anglais', 'SVT', 'Histoire-Géo', 'Informatique', 'Arabe', 'Philosophie', 'Économie', 'Espagnol'];
-const NIVEAUX_LIST = ['Primaire (CI–CM2)', 'Collège (6ème–3ème)', 'Lycée (2nde–Tle)', 'Supérieur'];
+const NIVEAUX_LIST = ['Primaire (CI–CM2)', 'Collège (6ème–3ème)', 'Lycée (2nde–Tle)'];
 const REGIONS_LIST = ['Dakar', 'Thiès', 'Saint-Louis', 'Kaolack', 'Ziguinchor', 'Touba', 'Mbour'];
 const MODES = ['En ligne', 'À domicile', 'Les deux'];
 const SORT_OPTIONS = [
