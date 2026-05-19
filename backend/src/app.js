@@ -5,7 +5,11 @@ const app = express();
 
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:4173',
+  'https://e-tutorat.vercel.app',
+  'https://www.etutorat.sn',
+  'https://etutorat.sn',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -14,10 +18,9 @@ const corsOptions = {
     if (!origin) return cb(null, true);
     if (
       ALLOWED_ORIGINS.includes(origin) ||
-      /^https:\/\/frontend(-[a-z0-9]+-bricet05s-projects\.vercel\.app|(-alpha-seven-25)?\.vercel\.app)$/.test(origin) ||
-      origin === 'https://www.etutorat.sn' ||
-      origin === 'https://etutorat.sn'
+      /^https:\/\/[a-z0-9-]+-bricet05s-projects\.vercel\.app$/.test(origin)
     ) return cb(null, true);
+    console.warn('[CORS] origine refusée :', origin);
     cb(new Error('CORS: origine non autorisée'));
   },
   credentials: true,
