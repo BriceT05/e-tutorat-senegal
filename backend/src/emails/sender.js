@@ -43,18 +43,25 @@ async function sendEmail({ to, subject, html }) {
 
   const fromEmail = process.env.EMAIL_FROM || 'etutorat2026@gmail.com';
 
-  const resp = await fetch(BREVO_SEND_URL, {
-    method: 'POST',
-    headers: {
-      'api-key': process.env.BREVO_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  // Buffer.from(..., 'utf8') garantit l'encodage UTF-8 explicite du payload JSON
+  const payload = Buffer.from(
+    JSON.stringify({
       sender: { name: 'e-Tutorat Sénégal', email: fromEmail },
       to: [{ email: to }],
       subject,
       htmlContent: html,
     }),
+    'utf8'
+  );
+
+  const resp = await fetch(BREVO_SEND_URL, {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Length': String(payload.length),
+    },
+    body: payload,
   });
 
   if (!resp.ok) {
