@@ -1,37 +1,89 @@
 const nodemailer = require('nodemailer');
 
 let _transporter = null;
+let _smtpOk = false;
 
-function getTransporter() {
-  if (_transporter) return _transporter;
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
-  _transporter = nodemailer.createTransport({
+// ─── Initialisation SMTP avec vérification ─────────────────────────────────────
+async function initEmail() {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('[EMAIL] ⚠️  EMAIL_USER / EMAIL_PASS absents — mode console activé');
+    console.warn('[EMAIL]    → Render : Settings → Environment → ajouter EMAIL_USER et EMAIL_PASS');
+    return false;
+  }
+
+  const t = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 10000,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
-  return _transporter;
+
+  try {
+    await t.verify();
+    _transporter = t;
+    _smtpOk = true;
+    console.log(`[EMAIL] ✅ SMTP Gmail opérationnel → ${process.env.EMAIL_USER}`);
+    return true;
+  } catch (err) {
+    _transporter = null;
+    _smtpOk = false;
+    console.error(`[EMAIL] ❌ SMTP verify échoué : ${err.message}`);
+    console.error(`[EMAIL]    EMAIL_USER = ${process.env.EMAIL_USER}`);
+    console.error(`[EMAIL]    EMAIL_PASS = ${process.env.EMAIL_PASS ? '(défini, ' + process.env.EMAIL_PASS.length + ' chars)' : 'VIDE'}`);
+    console.error('[EMAIL]    → Solution Gmail : Mon compte → Sécurité → Validation 2 étapes → Mots de passe des applications');
+    console.error('[EMAIL]    → Le mot de passe d\'application fait 16 caractères (sans espaces)');
+    return false;
+  }
 }
 
+// ─── Envoi d'un email ──────────────────────────────────────────────────────────
 async function sendEmail({ to, subject, html }) {
-  const t = getTransporter();
-  if (!t) {
-    console.log(`\n[EMAIL DEV] To: ${to} | Subject: ${subject}\n`);
-    return;
+  // Transporter absent : affiche en console (dev / SMTP non configuré)
+  if (!_transporter) {
+    console.log('[EMAIL DEV] ══════════════════════════════════════');
+    console.log(`[EMAIL DEV] To      : ${to}`);
+    console.log(`[EMAIL DEV] Subject : ${subject}`);
+    console.log('[EMAIL DEV] (email non envoyé — SMTP non configuré)');
+    console.log('[EMAIL DEV] ══════════════════════════════════════');
+    return { dev: true };
   }
+
   try {
-    await t.sendMail({
+    const info = await _transporter.sendMail({
       from: `"e-Tutorat Sénégal" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
+      headers: {
+        'X-Priority': '1',
+        'X-Mailer': 'e-Tutorat/1.0',
+      },
     });
+    console.log(`[EMAIL] ✅ Envoyé → ${to} | id: ${info.messageId}`);
+    return { ok: true, messageId: info.messageId };
   } catch (err) {
-    // Ne bloque pas le flux principal si l'email échoue
-    console.error(`[EMAIL ERROR] ${to}: ${err.message}`);
+    console.error(`[EMAIL] ❌ Erreur envoi → ${to}`);
+    console.error(`[EMAIL]    ${err.message}`);
+    // Reset pour re-tenter verify au prochain appel
+    _transporter = null;
+    _smtpOk = false;
+    // Re-init en arrière-plan
+    initEmail().catch(() => {});
+    throw err;
   }
 }
 
-module.exports = { sendEmail };
+// ─── Statut SMTP (pour /api/health) ───────────────────────────────────────────
+function smtpStatus() {
+  return {
+    configured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+    ok: _smtpOk,
+    user: process.env.EMAIL_USER || null,
+  };
+}
+
+module.exports = { sendEmail, initEmail, smtpStatus };

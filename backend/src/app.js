@@ -47,6 +47,9 @@ app.use('/api/admin',         require('./routes/admin'));
 app.use('/api/reviews',       require('./routes/reviews'));
 app.use('/api/articles',      require('./routes/articles'));
 
-app.get('/api/health', (_, res) => res.json({ ok: true, env: process.env.NODE_ENV }));
+app.get('/api/health', (_, res) => {
+  const { smtpStatus } = require('./emails/sender');
+  res.json({ ok: true, env: process.env.NODE_ENV, smtp: smtpStatus() });
+});
 
 module.exports = app;

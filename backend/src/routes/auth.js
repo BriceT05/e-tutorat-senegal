@@ -34,16 +34,19 @@ async function createAndSendOtp(user) {
     INSERT INTO login_otps (id, email, code, "expiresAt")
     VALUES (gen_random_uuid(), ${user.email}, ${hashed}, ${expiresAt})
   `;
-  Promise.all([
-    sendEmail({
-      to: user.email,
-      subject: `${code} — Votre code de vérification e-Tutorat`,
-      html: T.otpEmail({ prenom: user.prenom, code }),
-    }),
-    user.tel
-      ? sendSms(user.tel, `e-Tutorat : votre code de vérification est ${code}. Valable 5 minutes.`)
-      : Promise.resolve(),
-  ]).catch(err => console.error('[OTP SEND]', err));
+  console.log(`[OTP] Code généré pour ${user.email} — expire dans 5 min`);
+
+  // Envoi email + SMS en arrière-plan
+  sendEmail({
+    to: user.email,
+    subject: `${code} — Votre code de vérification e-Tutorat`,
+    html: T.otpEmail({ prenom: user.prenom, code }),
+  }).catch(err => console.error(`[OTP] ❌ Email non envoyé à ${user.email}: ${err.message}`));
+
+  if (user.tel) {
+    sendSms(user.tel, `e-Tutorat : votre code de vérification est ${code}. Valable 5 minutes.`)
+      .catch(err => console.error(`[OTP] ❌ SMS non envoyé à ${user.tel}: ${err.message}`));
+  }
 }
 
 // ─── Rate limiting in-memory ────────────────────────────────────────────────────
