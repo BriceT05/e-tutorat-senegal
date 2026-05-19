@@ -31,8 +31,12 @@ function base({ title, content }) {
         <tr>
           <td style="background:linear-gradient(135deg,#F97316 0%,#FBBF24 100%);
                      padding:28px 40px;text-align:center;">
+            <img src="https://e-tutorat.vercel.app/logo.png" alt="e-Tutorat Sénégal"
+                 width="64" height="64"
+                 style="display:block;margin:0 auto 10px;border-radius:14px;
+                        box-shadow:0 2px 12px rgba(0,0,0,0.18);" />
             <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;">
-              📚 e-Tutorat Sénégal
+              e-Tutorat Sénégal
             </div>
             <div style="font-size:11px;color:rgba(255,255,255,0.82);
                         letter-spacing:3px;text-transform:uppercase;margin-top:4px;">
