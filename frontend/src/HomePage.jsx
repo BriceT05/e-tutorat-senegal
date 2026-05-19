@@ -117,9 +117,9 @@ const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, cur
 
   const closeAndGo = (action) => { setOpen(false); action(); };
 
+  // `open` force aussi le fond opaque pour que le menu mobile reste lisible
+  // même quand la navbar est tout en haut de la page (scrollY === 0).
   return (
-    {/* `open` force aussi le fond opaque pour que le menu mobile reste lisible
-        même quand la navbar est tout en haut de la page (scrollY === 0). */}
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       backgroundColor: scrolled || open ? 'rgba(255,253,245,0.97)' : 'transparent',
