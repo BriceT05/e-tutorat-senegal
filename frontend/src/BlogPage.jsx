@@ -1,3 +1,6 @@
+// Page blog — liste paginée des articles avec filtre par catégorie et recherche texte.
+// Les articles sont chargés depuis l'API (publics, pas de token requis).
+// Vue détail intégrée dans le même composant (selectedArticle) pour éviter une route dédiée.
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from './api.js';
@@ -145,6 +148,7 @@ export default function BlogPage({ onGoHome, onTuteurs }) {
     });
   }, [page, activeCategory, search]);
 
+  // Reset page à 1 quand la catégorie ou la recherche change pour ne pas rester sur une page vide
   useEffect(() => { setPage(1); }, [activeCategory, search]);
 
   if (selectedArticle) {

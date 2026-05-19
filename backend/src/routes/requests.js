@@ -1,3 +1,5 @@
+// Routes de gestion des demandes de tutorat (TutoringRequest).
+// Flux : élève crée → tuteur accepte ou refuse → notification + email des deux côtés.
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
@@ -7,10 +9,11 @@ const { push } = require('../services/push');
 const validate = require('../middleware/validate');
 const { requestCreateSchema, requestUpdateSchema } = require('../schemas');
 
-// ─── GET /api/requests ──────────────────────────────────────────────────────────
+// ─── GET /api/requests — liste les demandes de l'utilisateur connecté ───────────
 router.get('/', auth, async (req, res) => {
   try {
     const { id, role } = req.user;
+    // Un tuteur voit les demandes qu'il a reçues ; un élève voit celles qu'il a envoyées
     const where = role === 'TUTEUR' ? { tuteurId: id } : { eleveId: id };
 
     const requests = await prisma.tutoringRequest.findMany({
@@ -127,6 +130,8 @@ router.patch('/:id', auth, validate(requestUpdateSchema), async (req, res) => {
       }),
     ];
 
+    // Si la demande est confirmée, créer automatiquement une conversation entre élève et tuteur
+    // si elle n'existe pas encore (un seul fil de discussion par paire)
     if (status === 'CONFIRMEE') {
       tasks.push(
         prisma.conversation.findFirst({

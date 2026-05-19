@@ -1,3 +1,4 @@
+// Page 404 — affichée par main.jsx quand `page` ne correspond à aucune route connue.
 import { motion } from 'framer-motion';
 import { BookOpen, Home, Search } from 'lucide-react';
 

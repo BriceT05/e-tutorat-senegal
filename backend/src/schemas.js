@@ -1,8 +1,12 @@
+// Schémas de validation Zod partagés entre les routes et les middlewares.
+// Chaque schéma est utilisé via le middleware validate() pour valider req.body
+// avant que la logique métier ne soit exécutée.
 const { z } = require('zod');
 
 // ─── Primitives réutilisables ─────────────────────────────────────────────────
 const str    = (max = 500) => z.string().trim().min(1).max(max);
 const optStr = (max = 500) => z.string().trim().max(max).optional().nullable();
+// max(254) respecte la limite RFC 5321 des adresses email
 const email  = z.string().trim().toLowerCase().email('Email invalide').max(254);
 const pwd    = z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères').max(128);
 const uuid   = z.string().uuid('Identifiant invalide');

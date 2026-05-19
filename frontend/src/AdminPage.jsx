@@ -1,3 +1,7 @@
+// Page d'administration — accès réservé aux comptes ADMIN (garde dans main.jsx).
+// Gère : statistiques globales, liste paginée des utilisateurs/demandes, articles du blog.
+// Toutes les mutations (suppression, changement de rôle) passent par /admin/* côté serveur
+// qui re-vérifie le rôle — le token JWT ne suffit pas, le backend vérifie aussi.
 import { useState, useEffect, useCallback } from 'react';
 import api from './api.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -203,6 +207,7 @@ const AdminUsers = ({ currentAdminId }) => {
   }, [page, search, roleFilter]);
 
   useEffect(() => { load(); }, [load]);
+  // Reset page à 1 dès que les filtres changent pour ne pas rester sur une page inexistante
   useEffect(() => { setPage(1); }, [search, roleFilter]);
 
   const changeRole = async (userId, newRole) => {
@@ -451,6 +456,8 @@ const AdminBlog = () => {
   const openEdit   = (a) => { setForm({ titre: a.titre, slug: a.slug, extrait: a.extrait || '', contenu: a.contenu, categorie: a.categorie, coverUrl: a.coverUrl || '', publie: a.publie }); setFormErr(''); setEditing(a); setCreating(false); };
   const closeForm  = () => { setCreating(false); setEditing(null); };
 
+  // Auto-génère le slug depuis le titre uniquement à la création (pas en édition
+  // pour éviter de casser les liens existants si le titre est retouché).
   const handleTitre = (v) => {
     setF('titre', v);
     if (!editing) setF('slug', slugify(v));

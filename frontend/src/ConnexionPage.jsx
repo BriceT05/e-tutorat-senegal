@@ -1,9 +1,13 @@
+// Page de connexion — email+mot de passe ou code OTP sans mot de passe.
+// Gère également le cas où l'email n'est pas encore vérifié (flux needsVerification)
+// qui redirige directement vers le panneau OTP après la tentative de login.
 import { useState } from 'react';
 import useIsMobile from './useIsMobile';
 import { motion } from 'framer-motion';
 import api from './api';
 import { BookOpen, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, X, CheckCircle, AlertCircle } from 'lucide-react';
 
+// ─── Design tokens partagés dans toute la page ────────────────────────────────
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
   surface: '#FFFFFF', accent: '#FEF3C7', text: '#3E2A1F',
@@ -12,6 +16,7 @@ const C = {
 const SERIF = '"Playfair Display", serif';
 const SANS = '"Inter", sans-serif';
 
+// Styles d'input avec bordure rouge si le champ est en erreur
 const inputStyle = (err) => ({
   padding: '14px 18px 14px 46px', fontSize: '1.05rem', borderRadius: '14px',
   border: `2px solid ${err ? C.error : C.border}`, backgroundColor: C.surface,
@@ -19,10 +24,13 @@ const inputStyle = (err) => ({
   boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s',
 });
 
+// Motif géométrique décoratif en filigrane (losanges orange très transparents)
 const GeoPatter = () => (
   <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.04, backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23F97316' fill-rule='evenodd'/%3E%3C/svg%3E")`, backgroundSize: '40px 40px' }} />
 );
 
+// Modal "mot de passe oublié" — saisie de l'email et envoi d'un lien de réinitialisation.
+// Affiche un message générique même si l'email n'existe pas (anti-énumération).
 const ForgotModal = ({ onClose }) => {
   const [email, setEmail] = useState('');
   const [emailErr, setEmailErr] = useState('');
@@ -119,30 +127,33 @@ const ForgotModal = ({ onClose }) => {
   );
 };
 
+// Page principale de connexion.
+// Props : onGoHome (retour accueil), onInscription (aller inscription), onSuccess(token, user).
 export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
   const isMobile = useIsMobile();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(false);        // basculer visibilité du mot de passe
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [slowLoading, setSlowLoading] = useState(false);
+  const [slowLoading, setSlowLoading] = useState(false); // message affiché si >5s (cold start Render)
   const [forgotOpen, setForgotOpen] = useState(false);
 
-  // ─── OTP state ───────────────────────────────────────────────────────────────
-  const [otpMode, setOtpMode] = useState(false);       // panneau OTP ouvert
+  // ─── État du panneau OTP (connexion sans mot de passe) ────────────────────────
+  const [otpMode, setOtpMode] = useState(false);       // panneau OTP visible
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [otpSent, setOtpSent] = useState(false);        // code envoyé
+  const [otpSent, setOtpSent] = useState(false);        // code déjà envoyé
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
-  const [otpCountdown, setOtpCountdown] = useState(0);  // secondes avant renvoyer
-  const [verifyRequired, setVerifyRequired] = useState(false); // email non vérifié
+  const [otpCountdown, setOtpCountdown] = useState(0);  // secondes restantes avant de pouvoir renvoyer
+  const [verifyRequired, setVerifyRequired] = useState(false); // true si l'email n'est pas encore vérifié
 
   const focus = e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = '0 0 0 3px rgba(249,115,22,0.12)'; };
   const blur = (err) => e => { e.target.style.borderColor = err ? C.error : C.border; e.target.style.boxShadow = 'none'; };
 
-  // ─── OTP handlers ────────────────────────────────────────────────────────────
+  // ─── Gestion du compteur OTP ──────────────────────────────────────────────────
+  // Démarre un décompte pour empêcher l'envoi de plusieurs codes consécutifs trop vite
   const startCountdown = (s = 60) => {
     setOtpCountdown(s);
     const iv = setInterval(() => setOtpCountdown(c => { if (c <= 1) { clearInterval(iv); return 0; } return c - 1; }), 1000);
@@ -173,6 +184,9 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
     finally { setOtpLoading(false); }
   };
 
+  // Soumission du formulaire email+mot de passe.
+  // slowTimer affiche un message d'attente après 5s pour préparer l'utilisateur
+  // au cold start du backend Render (peut prendre 10-20s après inactivité).
   const submit = async (e) => {
     e.preventDefault();
     const errs = {};
@@ -183,6 +197,8 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
     const slowTimer = setTimeout(() => setSlowLoading(true), 5000);
     try {
       const data = await api.post('/auth/login', { email, password });
+      // Si le backend répond needsVerification, l'email n'est pas confirmé :
+      // basculer directement vers le panneau OTP avec le code déjà envoyé par le backend
       if (data.needsVerification) {
         setOtpEmail(data.email || email);
         setOtpMode(true);
@@ -243,7 +259,7 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
               </p>
             </div>
 
-            {/* Social login - Google OAuth non encore disponible */}
+            {/* Bouton Google désactivé — OAuth non implémenté, affiché pour signaler la future fonctionnalité */}
             <div style={{ width: '100%', padding: '14px', borderRadius: '14px', border: `2px solid ${C.border}`, background: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '1rem', fontWeight: 600, color: C.light, fontFamily: SANS, marginBottom: '24px', opacity: 0.6, cursor: 'not-allowed', position: 'relative' }}>
               <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.6 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.6-8 19.6-20 0-1.3-.1-2.7-.4-4z" /><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4c-7.7 0-14.4 4.4-17.7 10.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.5 35.6 26.9 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.6 39.6 16.3 44 24 44z" /><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.7-2.7 4.9-5.1 6.4l6.2 5.2C40.4 36.5 44 30.7 44 24c0-1.3-.1-2.7-.4-4z" /></svg>
               Google — Bientôt disponible

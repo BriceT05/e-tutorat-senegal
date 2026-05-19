@@ -1,3 +1,5 @@
+// Point d'entrée React — routeur SPA basé sur l'état (pas react-router).
+// La navigation se fait via setPage() pour éviter des rechargements complets.
 import './index.css'
 import { StrictMode, useState, useEffect } from 'react'
 import api from './api.js'
@@ -16,10 +18,13 @@ import AdminPage from './AdminPage.jsx'
 import NotFoundPage from './NotFoundPage.jsx'
 import LegalPage from './LegalPage.jsx'
 
+// Récupère l'utilisateur depuis localStorage au premier rendu — try/catch si JSON corrompu
 const getStoredUser = () => {
   try { return JSON.parse(localStorage.getItem('etutorat_user') || 'null') } catch { return null }
 }
 
+// Les tokens de reset/vérification arrivent via query string (?reset=..., ?verify=...)
+// et sont lus une seule fois au montage (useState sans setter)
 const getResetToken = () => {
   const params = new URLSearchParams(window.location.search)
   return params.get('reset') || null
@@ -31,18 +36,21 @@ const getVerifyToken = () => {
 }
 
 function App() {
-  // Pré-chauffe le backend Render dès le chargement de l'app
+  // Pré-chauffe le backend Render au chargement de l'app pour réduire la latence du cold start
   useEffect(() => { api.get('/health').catch(() => {}) }, [])
 
   const [page, setPage] = useState('home')
   const [legalTab, setLegalTab] = useState('cgu')
   const [currentUser, setCurrentUser] = useState(getStoredUser)
   const [selectedTuteur, setSelectedTuteur] = useState(null)
+  // Initialisés une seule fois depuis l'URL, sans setter car immuables après le montage
   const [resetToken]  = useState(getResetToken)
   const [verifyToken] = useState(getVerifyToken)
 
+  // scroll to top à chaque changement de page pour simuler la navigation standard
   const nav = (p) => { setPage(p); window.scrollTo(0, 0) }
 
+  // Persiste le token JWT et l'objet user dans localStorage pour survivre aux rechargements
   const login = (token, user) => {
     localStorage.setItem('etutorat_token', token)
     localStorage.setItem('etutorat_user', JSON.stringify(user))
@@ -56,11 +64,14 @@ function App() {
     nav('home')
   }
 
+  // Appelé après une mise à jour de profil pour garder le state React en sync avec localStorage
   const updateUser = (updatedUser) => {
     localStorage.setItem('etutorat_user', JSON.stringify(updatedUser))
     setCurrentUser(updatedUser)
   }
 
+  // Les pages de vérification email et reset password interceptent la query string
+  // et nettoient l'URL avec replaceState pour éviter une reboucle au rechargement
   if (verifyToken)
     return <VerifyEmailPage
       token={verifyToken}
@@ -105,6 +116,7 @@ function App() {
       onNeedAuth={() => nav('connexion')}
     />
 
+  // Les admins ont leur propre tableau de bord distinct du dashboard élève/tuteur
   if (page === 'dashboard') {
     if (currentUser?.role === 'ADMIN')
       return <AdminPage
@@ -140,6 +152,7 @@ function App() {
       onTuteurs={() => nav('tuteurs')}
     />
 
+  // Toute page inconnue affiche le 404 (cas improbable mais défensif)
   const knownPages = ['home', 'inscription', 'connexion', 'tuteurs', 'profil', 'dashboard', 'matieres', 'blog']
   if (!knownPages.includes(page))
     return <NotFoundPage

@@ -1,3 +1,7 @@
+// Page de listing et recherche des tuteurs.
+// Charge tous les tuteurs depuis l'API puis applique les filtres côté client (useMemo).
+// Les filtres structurés (matière, région, etc.) sont envoyés en query params pour réduire
+// le volume de données ; la recherche texte libre est appliquée localement après réception.
 import { useState, useMemo, useEffect } from 'react';
 import useIsMobile from './useIsMobile';
 import api from './api.js';
@@ -16,7 +20,9 @@ const C = {
 const SERIF = '"Playfair Display", serif';
 const SANS = '"Inter", sans-serif';
 
-// ─── Helpers data ─────────────────────────────────────────────────────────────
+// ─── Normalisation des données backend ────────────────────────────────────────
+// Garantit des valeurs par défaut pour tous les champs optionnels du profil tuteur.
+// Évite les undefined qui provoqueraient des erreurs dans les composants d'affichage.
 const normalizeTuteur = (u) => ({
   id: u.id,
   photo: u.photo || null,
@@ -84,6 +90,8 @@ const RangeSlider = ({ value, onChange, min, max, step, format }) => (
   </div>
 );
 
+// Carte tuteur animée avec délai progressif (staggered) pour un effet de chargement fluide.
+// Le bouton favori est local (non persisté) — fonctionnalité de démonstration.
 const TuteurCard = ({ t, onView, delay }) => {
   const [fav, setFav] = useState(false);
   return (
@@ -162,7 +170,10 @@ const TuteurCard = ({ t, onView, delay }) => {
 };
 
 // ─── SIDEBAR FILTRES ──────────────────────────────────────────────────────────
+// Tous les filtres sont appliqués en mémoire dans le composant parent (useMemo).
+// Le compteur activeCount affiche le nombre de filtres actifs sur le badge.
 const Sidebar = ({ filters, setFilters, count }) => {
+  // Bascule un élément dans un tableau de filtre (ajoute/retire)
   const toggle = (key, val) => {
     setFilters(f => {
       const arr = f[key] || [];
@@ -238,6 +249,8 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // Filtrage + tri recalculé uniquement quand search, sort ou filters changent.
+  // Le mode "Les deux" côté tuteur est compatible avec "En ligne" et "À domicile" dans les filtres.
   const filtered = useMemo(() => {
     let list = TUTEURS.filter(t => {
       const q = search.toLowerCase();
@@ -245,6 +258,7 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
       if (filters.matieres.length && !filters.matieres.some(m => t.matieres.includes(m))) return false;
       if (filters.niveaux.length && !filters.niveaux.some(n => t.niveaux.includes(n))) return false;
       if (filters.regions.length && !filters.regions.includes(t.region)) return false;
+      // Un tuteur "Les deux" est inclus quel que soit le filtre de mode
       if (filters.modes.length && filters.modes[0] !== 'Les deux' && !filters.modes.includes(t.mode) && t.mode !== 'Les deux') return false;
       if (t.tarif > filters.maxTarif) return false;
       return true;

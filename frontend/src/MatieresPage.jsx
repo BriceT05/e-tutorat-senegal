@@ -1,3 +1,6 @@
+// Page matières — catalogue statique des disciplines groupées par catégorie.
+// Charge le nombre de tuteurs par matière depuis l'API pour afficher un compteur en temps réel.
+// Le clic sur une matière navigue vers TuteursPage avec le filtre pré-sélectionné.
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from './api.js';
@@ -97,6 +100,8 @@ export default function MatieresPage({ onGoHome, onTuteurs }) {
     }).catch(() => {});
   }, []);
 
+  // Certaines matières ont un dbKey différent du label affiché (ex: 'SVT', 'Histoire-Géo')
+  // car la BDD stocke l'abréviation mais l'UI affiche le nom complet.
   const getTuteurCount = (m) => {
     const key = m.dbKey || m.name;
     return tuteursByMatiere[key] ?? null;

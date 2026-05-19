@@ -1,3 +1,5 @@
+// Routes réservées aux administrateurs : statistiques, gestion des utilisateurs,
+// des demandes et des articles du blog. Toutes les routes passent par auth + adminOnly.
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
@@ -5,6 +7,7 @@ const { slugify } = require('./articles');
 const validate = require('../middleware/validate');
 const { roleUpdateSchema, articleSchema, articleUpdateSchema } = require('../schemas');
 
+// Middleware de garde — refuse tout accès si le rôle n'est pas ADMIN
 const adminOnly = (req, res, next) => {
   if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
   next();
@@ -73,10 +76,11 @@ router.get('/users', auth, adminOnly, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/users/:id/role
+// PATCH /api/admin/users/:id/role — changer le rôle d'un utilisateur (ELEVE/TUTEUR/ADMIN)
 router.patch('/users/:id/role', auth, adminOnly, validate(roleUpdateSchema), async (req, res) => {
   try {
     const { role } = req.body;
+    // Empêcher un admin de se rétrograder lui-même accidentellement
     if (req.params.id === req.user.id)
       return res.status(400).json({ error: 'Impossible de modifier son propre rôle' });
     const updated = await prisma.user.update({
@@ -91,9 +95,10 @@ router.patch('/users/:id/role', auth, adminOnly, validate(roleUpdateSchema), asy
   }
 });
 
-// DELETE /api/admin/users/:id
+// DELETE /api/admin/users/:id — suppression définitive (cascade sur toutes les données liées)
 router.delete('/users/:id', auth, adminOnly, async (req, res) => {
   try {
+    // Empêcher un admin de supprimer son propre compte (protection contre la maladresse)
     if (req.params.id === req.user.id)
       return res.status(400).json({ error: 'Impossible de supprimer son propre compte' });
     await prisma.user.delete({ where: { id: req.params.id } });
@@ -168,6 +173,7 @@ router.post('/articles', auth, adminOnly, validate(articleSchema), async (req, r
   try {
     const { titre, slug, extrait, contenu, categorie, coverUrl, publie } = req.body;
 
+    // Génère un slug depuis le titre si non fourni ; timestamp en dernier recours
     const finalSlug = (slug?.trim() || slugify(titre)) || `article-${Date.now()}`;
 
     const article = await prisma.article.create({

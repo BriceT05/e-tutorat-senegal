@@ -1,3 +1,6 @@
+// Routes des avis sur les tuteurs.
+// Un élève ne peut laisser un avis que s'il a au moins une demande CONFIRMEE avec ce tuteur.
+// Un avis par (tuteur, élève) est garanti par une contrainte unique en base de données.
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
@@ -5,7 +8,8 @@ const jwt = require('jsonwebtoken');
 const validate = require('../middleware/validate');
 const { reviewCreateSchema } = require('../schemas');
 
-// Lit le JWT si présent sans bloquer si absent
+// Middleware d'auth optionnel — enrichit req.user si un token valide est présent,
+// mais laisse passer les visiteurs non connectés (pour la lecture publique des avis)
 const optAuth = (req, _res, next) => {
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) {
@@ -83,7 +87,8 @@ router.post('/', auth, validate(reviewCreateSchema), async (req, res) => {
       throw e;
     }
 
-    // Recalculer noteAvg et nbAvis du tuteur
+    // Recalculer noteAvg et nbAvis du tuteur en temps réel après chaque avis
+    // (plutôt que de stocker une moyenne qui risquerait de désynchroniser)
     const agg = await prisma.review.aggregate({
       where: { tuteurId },
       _avg: { note: true },
@@ -92,7 +97,7 @@ router.post('/', auth, validate(reviewCreateSchema), async (req, res) => {
     await prisma.user.update({
       where: { id: tuteurId },
       data: {
-        noteAvg: Math.round((agg._avg.note || 0) * 10) / 10,
+        noteAvg: Math.round((agg._avg.note || 0) * 10) / 10,  // arrondi à 1 décimale
         nbAvis: agg._count.note,
       },
     });

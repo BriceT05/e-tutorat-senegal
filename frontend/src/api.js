@@ -16,6 +16,9 @@ if (import.meta.env.DEV) {
   console.log('[api] BASE =', BASE);
 }
 
+// Construit les headers communs à tous les appels API.
+// Le token JWT est lu depuis localStorage à chaque appel (pas mis en cache)
+// pour prendre en compte une déconnexion entre deux requêtes.
 const authHeaders = () => ({
   'Content-Type': 'application/json',
   ...(localStorage.getItem('etutorat_token')
@@ -23,10 +26,12 @@ const authHeaders = () => ({
     : {}),
 });
 
+// Fonction interne qui exécute tous les appels HTTP.
+// Retourne toujours un objet — jamais une exception — pour simplifier la gestion d'erreurs
+// dans les composants (pas besoin de try/catch partout).
 const req = async (method, path, body) => {
   const url = `${BASE}${path}`;
 
-  // Log en dev pour traçabilité
   if (import.meta.env.DEV) {
     console.log(`[api] ${method} ${url}`);
   }
@@ -51,11 +56,12 @@ const req = async (method, path, body) => {
   try {
     return await res.json();
   } catch {
-    // Réponse non-JSON (HTML 503 Render cold start, etc.)
+    // Réponse non-JSON — arrive notamment lors des cold starts Render (page HTML 503)
     return { error: `Erreur serveur (${res.status}). Réessayez dans quelques instants.` };
   }
 };
 
+// Interface publique du module — wrappeurs HTTP simples à utiliser dans les composants
 const api = {
   get:    path        => req('GET',    path),
   post:   (path, b)   => req('POST',   path, b),

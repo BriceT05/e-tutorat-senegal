@@ -1,9 +1,13 @@
+// Page de réinitialisation de mot de passe.
+// Le token arrivé en query string (?reset=...) est transmis depuis main.jsx en prop.
+// Après succès, nettoie l'URL avec replaceState pour éviter une reboucle si rechargée.
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Lock, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import api from './api';
 import useIsMobile from './useIsMobile';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
   surface: '#FFFFFF', accent: '#FEF3C7', text: '#3E2A1F',
@@ -33,6 +37,7 @@ export default function ResetPasswordPage({ token, onGoHome, onGoConnexion }) {
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState('');
 
+  // Score de force du mot de passe : 4 critères (longueur, majuscule, chiffre, spécial)
   const strength = (p) => {
     let s = 0;
     if (p.length >= 8) s++;

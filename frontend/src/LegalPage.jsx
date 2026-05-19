@@ -1,8 +1,11 @@
+// Page légale — deux onglets : CGU (Conditions Générales) et Politique de confidentialité.
+// Le tab initial est passé en prop depuis main.jsx selon le lien cliqué dans le footer.
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, ArrowLeft, Shield, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import useIsMobile from './useIsMobile';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
   surface: '#FFFFFF', accent: '#FEF3C7', text: '#3E2A1F',
@@ -11,6 +14,7 @@ const C = {
 const SERIF = '"Playfair Display", serif';
 const SANS  = '"Inter", sans-serif';
 
+// Section accordéon — ouverte par défaut, refermable au clic sur le titre
 const Section = ({ title, children }) => {
   const [open, setOpen] = useState(true);
   return (

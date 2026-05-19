@@ -1,10 +1,13 @@
+// Routes de messagerie entre élèves et tuteurs.
+// Une conversation est créée automatiquement si elle n'existe pas lors du premier message.
 const router = require('express').Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const { messageCreateSchema } = require('../schemas');
 
-// GET /api/messages — mes conversations
+// GET /api/messages — liste toutes les conversations de l'utilisateur connecté
+// avec le dernier message et le nombre de messages non lus pour chaque fil
 router.get('/', auth, async (req, res) => {
   try {
     const members = await prisma.conversationMember.findMany({

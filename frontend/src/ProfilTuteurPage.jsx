@@ -1,3 +1,6 @@
+// Page de profil détaillé d'un tuteur — accessible depuis la liste ou un lien direct.
+// Charge les avis en arrière-plan et permet à un élève connecté d'envoyer une demande.
+// La demande passe par un modal multi-étapes (matière → horaires → message → confirmation).
 import { useState, useEffect } from 'react';
 import useIsMobile from './useIsMobile';
 import api from './api.js';
@@ -17,7 +20,8 @@ const C = {
 const SERIF = '"Playfair Display", serif';
 const SANS = '"Inter", sans-serif';
 
-// ─── Données enrichies d'un tuteur (depuis le backend) ───────────────────────
+// Normalise et complète un objet tuteur avec des valeurs par défaut.
+// Les disponibilités sont une grille 7 jours × 7 plages horaires (booléens).
 const buildTuteur = (t) => ({
   ...t,
   experience: t.experience || null,
@@ -65,6 +69,9 @@ const PLAGES = [
 ];
 const DISPO_HEURES = ['08h–10h', '10h–12h', '12h–14h', '14h–16h', '16h–18h', '18h–20h', '20h–22h'];
 
+// Modal de demande de suivi en 2 étapes : sélection matière/mode/durée → message.
+// Si le tuteur a configuré sa grille de disponibilités, elle est utilisée ;
+// sinon on affiche un sélecteur jour/plage horaire libre (fallback).
 const ModalReservation = ({ tuteur, onClose, onConfirm, initSlots = [] }) => {
   const [step, setStep] = useState(1);
   const [duree, setDuree] = useState('1 mois');
@@ -73,7 +80,7 @@ const ModalReservation = ({ tuteur, onClose, onConfirm, initSlots = [] }) => {
   const [selectedSlots, setSelectedSlots] = useState(initSlots);
   const [message, setMessage] = useState('');
 
-  // Fallback state used when tutor has no dispo configured
+  // État de remplacement quand le tuteur n'a pas configuré sa grille de dispo
   const [jours, setJours] = useState([]);
   const [plages, setPlages] = useState([]);
   const toggleJour = j => setJours(p => p.includes(j) ? p.filter(x => x !== j) : [...p, j]);

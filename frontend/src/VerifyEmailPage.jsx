@@ -1,9 +1,13 @@
+// Page de vérification d'email — affichée quand l'utilisateur clique le lien dans son email.
+// Le token (?verify=...) est extrait par main.jsx et passé en prop.
+// Trois états : loading → success | error. L'appel API est déclenché dès le montage.
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, CheckCircle, XCircle, Loader } from 'lucide-react';
 import api from './api';
 import useIsMobile from './useIsMobile';
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   primary: '#F97316', secondary: '#FBBF24', background: '#FFFDF5',
   surface: '#FFFFFF', accent: '#FEF3C7', text: '#3E2A1F',
@@ -14,8 +18,9 @@ const SANS  = '"Inter", sans-serif';
 
 export default function VerifyEmailPage({ token, onGoHome, onGoConnexion }) {
   const isMobile = useIsMobile();
-  const [status, setStatus] = useState('loading'); // loading | success | error
+  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
 
+  // Vérification automatique au montage — le token est à usage unique côté serveur
   useEffect(() => {
     api.get(`/auth/verify-email?token=${token}`)
       .then(data => setStatus(data.error ? 'error' : 'success'))

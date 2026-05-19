@@ -1,3 +1,6 @@
+// Page d'inscription en 4 étapes : choix du rôle → infos personnelles → profil → OTP.
+// AnimatePresence assure les transitions entre étapes sans saut visuel.
+// L'étape 3 diffère selon le rôle (Step3Eleve vs Step3Tuteur).
 import { useState, useEffect } from 'react';
 import useIsMobile from './useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -141,7 +144,8 @@ const PasswordInput = ({ label, required, value, onChange, error, placeholder })
   );
 };
 
-// ─── Stepper ──────────────────────────────────────────────────────────────────
+// ─── Stepper — indicateur de progression visuel ──────────────────────────────
+// Affiche une coche verte pour les étapes terminées, le numéro pour les suivantes
 const STEPS_LABELS = ['Profil', 'Infos personnelles', 'Détails', 'Vérification'];
 
 const Stepper = ({ step }) => {
@@ -397,11 +401,13 @@ const Step3Tuteur = ({ data, set, errors }) => {
 };
 
 // ─── ÉTAPE 4 — Vérification OTP ──────────────────────────────────────────────
+// Saisie du code à 6 chiffres reçu par email/SMS après l'inscription.
+// Le champ invisible capte la frappe et met à jour les 6 cases visuelles séparément.
 const Step4OTP = ({ email, onVerified }) => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(60);  // décompte avant renvoyer
   const [resending, setResending] = useState(false);
 
   useEffect(() => {
@@ -431,6 +437,7 @@ const Step4OTP = ({ email, onVerified }) => {
     finally { setLoading(false); }
   };
 
+  // Masquer l'email pour préserver la vie privée tout en restant identifiable
   const maskedEmail = email.replace(/(.{2}).+(@.+)/, '$1***$2');
 
   return (
@@ -448,7 +455,8 @@ const Step4OTP = ({ email, onVerified }) => {
         </p>
       </div>
 
-      {/* 6-box OTP input */}
+      {/* Saisie OTP à 6 cases : l'input invisible capte la frappe, les 6 div affichent les chiffres.
+          Cette technique évite les problèmes d'UX du champ numérique standard sur mobile. */}
       <div style={{ position: 'relative', marginBottom: '24px', display: 'inline-block', width: '100%' }}>
         <input
           type="text" inputMode="numeric" value={code} autoFocus
@@ -550,7 +558,9 @@ const StepSuccess = ({ role, prenom, onGoHome, onSuccess }) => (
   </motion.div>
 );
 
-// ─── VALIDATION ───────────────────────────────────────────────────────────────
+// ─── VALIDATION côté client ───────────────────────────────────────────────────
+// Appliquée avant chaque clic "Continuer" pour donner un retour immédiat sans appel API.
+// La validation serveur (Zod) reste la source de vérité ultime.
 const validate = (step, role, info, profile) => {
   const errs = {};
   if (step === 2) {
@@ -576,7 +586,10 @@ const validate = (step, role, info, profile) => {
   return errs;
 };
 
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+// ─── COMPOSANT PRINCIPAL ──────────────────────────────────────────────────────
+// Orchestre les 5 étapes : 1=rôle, 2=infos, 3=profil spécifique, 4=OTP, 5=succès.
+// savedToken/savedUser sont stockés temporairement entre l'étape 4 (OTP) et le succès (5)
+// pour passer les credentials à onSuccess sans refaire un appel API.
 export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) {
   const isMobile = useIsMobile();
   const [step, setStep] = useState(1);
@@ -584,12 +597,13 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
   const [info, setInfo] = useState({ prenom: '', nom: '', email: '', tel: '', password: '', confirm: '' });
   const [profile, setProfile] = useState({});
   const [errors, setErrors] = useState({});
-  const [savedUser, setSavedUser] = useState(null);
-  const [savedToken, setSavedToken] = useState(null);
+  const [savedUser, setSavedUser] = useState(null);   // stocké après vérification OTP
+  const [savedToken, setSavedToken] = useState(null); // idem
   const [loading, setLoading] = useState(false);
-  const [slowLoading, setSlowLoading] = useState(false);
+  const [slowLoading, setSlowLoading] = useState(false); // message cold start après 5s
   const [submitError, setSubmitError] = useState(null);
 
+  // Helpers qui effacent l'erreur du champ modifié pour un retour UX immédiat
   const setI = (k, v) => { setInfo(p => ({ ...p, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); };
   const setP = (k, v) => { setProfile(p => ({ ...p, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); };
 
@@ -616,7 +630,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
           setSubmitError(data.error);
           return;
         }
-        // data.needsVerification: true → go to OTP step
+        // Le backend répond { needsVerification: true } → passer à l'étape OTP (step 4)
       } catch {
         setSubmitError('Erreur de connexion au serveur. Réessayez.');
         return;

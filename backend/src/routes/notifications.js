@@ -1,10 +1,13 @@
+// Routes de notifications : historique paginé + flux SSE temps réel.
+// Le flux SSE (/stream) accepte le JWT en query param car EventSource (navigateur)
+// ne permet pas d'ajouter des headers HTTP personnalisés.
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
 const { register } = require('../services/push');
 
-// GET /api/notifications — dernières 50 notifs
+// GET /api/notifications — dernières 50 notifs de l'utilisateur (ordre antichronologique)
 router.get('/', auth, async (req, res) => {
   try {
     const notifs = await prisma.notification.findMany({

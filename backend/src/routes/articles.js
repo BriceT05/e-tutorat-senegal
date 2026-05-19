@@ -1,6 +1,10 @@
+// Routes publiques du blog — lecture seule, accessible sans authentification.
+// La création/modification/suppression des articles passe par les routes admin.
 const router = require('express').Router();
 const prisma = require('../prisma');
 
+// Convertit un titre en slug URL-safe : "L'École Sénégalaise" → "l-ecole-senegalaise"
+// normalize('NFD') décompose les accents, le regex suivant les supprime
 const slugify = (str) =>
   str.toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')

@@ -1,3 +1,6 @@
+// Tableau de bord utilisateur — espace privé après connexion.
+// Rendu conditionnel selon le rôle : élève voit ses demandes ; tuteur voit les demandes reçues.
+// Gère aussi : messagerie temps réel, notifications SSE, modification de profil, upload photo.
 import { useState, useRef, useEffect, useCallback } from 'react';
 import api from './api.js';
 import useIsMobile from './useIsMobile';
@@ -10,6 +13,8 @@ import {
   MessageSquare, Send, Search,
 } from 'lucide-react';
 
+// Credentials Supabase pour l'upload direct de photos de profil (Storage).
+// Non requis si Supabase n'est pas configuré — l'upload photo sera désactivé silencieusement.
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -22,7 +27,9 @@ const SERIF = '"Playfair Display", serif';
 const SANS = '"Inter", sans-serif';
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Composants utilitaires réutilisables dans le dashboard ──────────────────
+
+// Badge de statut de demande avec couleur sémantique (vert/orange/rouge)
 const StatusPill = ({ status }) => {
   const map = {
     CONFIRMEE: { bg: '#DCFCE7', color: '#166534', label: '✓ Confirmée' },
@@ -68,6 +75,7 @@ const NavItem = ({ icon: Icon, label, active, onClick, badge }) => (
   </motion.button>
 );
 
+// Avatar carré arrondi — affiche la photo ou un emoji selon le rôle si pas de photo
 const UserAvatar = ({ user, size = 100, radius = '28px' }) => (
   <div style={{ width: size, height: size, borderRadius: radius, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: C.accent, flexShrink: 0 }}>
     {user?.photo
@@ -77,7 +85,9 @@ const UserAvatar = ({ user, size = 100, radius = '28px' }) => (
   </div>
 );
 
-// ─── Contact Modal ────────────────────────────────────────────────────────────
+// ─── Modal de coordonnées de contact ─────────────────────────────────────────
+// Affiché après confirmation d'une demande pour partager tél/whatsapp/email du tuteur.
+// Le bouton copie utilise l'API Clipboard avec retour visuel temporaire.
 const ContactModal = ({ data, onClose }) => {
   const [copied, setCopied] = useState(null);
   const copy = (text, key) => {
@@ -437,10 +447,12 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
+// Section "Mon profil" — lecture seule ou éditable selon le state `editing`.
+// L'upload photo passe par Supabase Storage ; si non configuré, le champ photo reste vide.
 const MonProfil = ({ user, onUserUpdate }) => {
   const fileRef = useRef(null);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ ...user });
+  const [form, setForm] = useState({ ...user });  // copie locale pour éviter des mutations
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
 
@@ -452,6 +464,8 @@ const MonProfil = ({ user, onUserUpdate }) => {
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
+  // Upload d'avatar vers Supabase Storage via l'API REST directe (pas de SDK JS).
+  // Le chemin inclut l'userId + timestamp pour éviter les conflits de cache CDN.
   const handlePhoto = async (e) => {
     const file = e.target.files[0];
     if (!file) return;

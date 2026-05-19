@@ -1,3 +1,7 @@
+// Page d'accueil — landing page en 8 sections avec animations au scroll.
+// Pas d'appels API : contenu entièrement statique, optimisé pour les performances initiales.
+// FadeIn utilise useInView (framer-motion) avec margin:-80px pour déclencher avant que
+// l'élément soit complètement visible — évite un effet "pop" trop tardif au scroll.
 import { useState, useEffect } from 'react';
 import useIsMobile from './useIsMobile';
 import { motion, useInView } from 'framer-motion';
@@ -114,6 +118,8 @@ const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, cur
   const closeAndGo = (action) => { setOpen(false); action(); };
 
   return (
+    {/* `open` force aussi le fond opaque pour que le menu mobile reste lisible
+        même quand la navbar est tout en haut de la page (scrollY === 0). */}
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       backgroundColor: scrolled || open ? 'rgba(255,253,245,0.97)' : 'transparent',

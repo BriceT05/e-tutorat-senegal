@@ -1,8 +1,12 @@
+// Script de seed — peuple la base de données avec des profils tuteurs de démonstration.
+// Exécuter avec : npx prisma db seed (ou via `prisma.seed` dans package.json)
+// Idempotent : vérifie l'existence avant chaque création pour éviter les doublons.
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+// Données des tuteurs de démonstration — couvrent les principales régions et matières du Sénégal
 const TUTEURS = [
   {
     prenom: 'Ibrahima', nom: 'Diallo', email: 'ibrahima.diallo@etutorat.sn',
@@ -72,9 +76,11 @@ const TUTEURS = [
 async function main() {
   console.log('🌱 Seeding tuteurs...');
 
+  // Mot de passe identique pour tous les tuteurs de démo — ne jamais utiliser en prod
   const hash = await bcrypt.hash('Tutorat2026!', 10);
 
   for (const t of TUTEURS) {
+    // Vérification par email pour garantir l'idempotence
     const exists = await prisma.user.findUnique({ where: { email: t.email } });
     if (exists) {
       console.log(`  ⏭  ${t.prenom} ${t.nom} déjà en base`);
