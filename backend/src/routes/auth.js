@@ -232,8 +232,8 @@ router.post('/otp/verify', rateLimit(10, 15 * 60 * 1000), validate(S.otpVerifySc
 
     res.json({ token: sign(user), user: safeUser(user) });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[OTP VERIFY ERROR]', err);
+    res.status(500).json({ error: 'Erreur serveur', _debug: err.message });
   }
 });
 
