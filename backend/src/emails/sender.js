@@ -11,12 +11,21 @@ async function initEmail() {
     return false;
   }
 
+  // Brevo (smtp-relay.brevo.com) si EMAIL_HOST défini, sinon Gmail
+  const transport = process.env.EMAIL_HOST
+    ? {
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT) || 587,
+        secure: false,
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      }
+    : {
+        service: 'gmail',
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      };
+
   const t = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+    ...transport,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
