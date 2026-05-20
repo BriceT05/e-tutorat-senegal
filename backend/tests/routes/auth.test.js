@@ -18,6 +18,7 @@ jest.mock('../../src/prisma', () => ({
 
 jest.mock('../../src/emails/sender', () => ({
   sendEmail: jest.fn().mockResolvedValue(undefined),
+  smtpStatus: jest.fn().mockReturnValue('ok'),
 }));
 
 jest.mock('../../src/services/push', () => ({
@@ -103,7 +104,7 @@ describe('POST /api/auth/register', () => {
     expect(res.body.error).toBe('Email déjà utilisé');
   });
 
-  test('inscription valide → 201 avec token + user sans données sensibles', async () => {
+  test('inscription valide → 201 avec needsVerification (flux OTP)', async () => {
     prisma.user.findUnique.mockResolvedValueOnce(null);
     prisma.user.create.mockResolvedValueOnce(fakeUser());
     prisma.notification.create.mockResolvedValueOnce({ id: 'notif-1' });
@@ -113,12 +114,8 @@ describe('POST /api/auth/register', () => {
       .send(VALID_BODY);
 
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeDefined();
-    expect(res.body.user.id).toBe('user-001');
-    // Champs sensibles absents
-    expect(res.body.user.password).toBeUndefined();
-    expect(res.body.user.resetToken).toBeUndefined();
-    expect(res.body.user.emailVerifyToken).toBeUndefined();
+    expect(res.body.needsVerification).toBe(true);
+    expect(res.body.email).toBe('fatou@test.com');
   });
 });
 
@@ -144,7 +141,7 @@ describe('POST /api/auth/login', () => {
   });
 
   test('identifiants corrects → 200 avec token + user sans données sensibles', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce(fakeUser());
+    prisma.user.findUnique.mockResolvedValueOnce(fakeUser({ emailVerified: true }));
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'fatou@test.com', password: 'Secret123!' });
