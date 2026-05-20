@@ -330,6 +330,74 @@ ${btn(
   });
 }
 
+// ─── 7. Profil tuteur approuvé ─────────────────────────────────────────────────
+function tuteurApprovedEmail({ prenom }) {
+  return base({
+    title: 'Votre profil tuteur est validé — e-Tutorat',
+    content: `
+<div style="text-align:center;margin-bottom:28px;">
+  <div style="font-size:52px;margin-bottom:12px;">🎉</div>
+  <h1 style="margin:0 0 6px;color:#3E2A1F;font-size:26px;font-weight:800;font-family:Georgia,serif;">
+    Profil validé !
+  </h1>
+  <p style="margin:0;color:#6B7280;font-size:15px;">Vous êtes maintenant visible par les élèves</p>
+</div>
+
+<p style="color:#524036;line-height:1.75;font-size:15px;margin:0 0 24px;">
+  Bonjour <strong>${prenom}</strong>, bonne nouvelle ! Notre équipe a examiné votre profil
+  et l'a validé. Vous apparaissez désormais dans la liste des tuteurs de la plateforme.
+</p>
+
+<div style="background:#ECFDF5;border-radius:14px;padding:20px 24px;margin:0 0 28px;border-left:4px solid #10B981;">
+  <p style="margin:0;color:#065F46;font-size:14px;line-height:1.7;">
+    ✅ Votre profil est en ligne<br>
+    📬 Vous recevrez des notifications dès qu'un élève vous contacte<br>
+    💬 Répondez rapidement aux demandes pour améliorer votre taux de réponse
+  </p>
+</div>
+
+${btn('🚀 Accéder à mon tableau de bord', `${FRONTEND}?page=dashboard`)}
+`,
+  });
+}
+
+// ─── 8. Profil tuteur rejeté ───────────────────────────────────────────────────
+function tuteurRejectedEmail({ prenom }) {
+  return base({
+    title: 'Votre profil tuteur — e-Tutorat',
+    content: `
+<div style="text-align:center;margin-bottom:28px;">
+  <div style="font-size:52px;margin-bottom:12px;">📋</div>
+  <h1 style="margin:0 0 6px;color:#3E2A1F;font-size:26px;font-weight:800;font-family:Georgia,serif;">
+    Profil en attente
+  </h1>
+  <p style="margin:0;color:#6B7280;font-size:15px;">Des informations complémentaires sont nécessaires</p>
+</div>
+
+<p style="color:#524036;line-height:1.75;font-size:15px;margin:0 0 24px;">
+  Bonjour <strong>${prenom}</strong>, après examen de votre profil, notre équipe ne peut pas
+  le valider en l'état. Des informations essentielles sont manquantes ou incomplètes.
+</p>
+
+<div style="background:#FEF2F2;border-radius:14px;padding:20px 24px;margin:0 0 28px;border-left:4px solid #EF4444;">
+  <p style="margin:0 0 10px;color:#991B1B;font-weight:800;font-size:14px;">Pour être validé, assurez-vous d'avoir :</p>
+  <ul style="margin:0;padding-left:20px;color:#7F1D1D;font-size:14px;line-height:2;">
+    <li>Une biographie complète décrivant votre approche pédagogique</li>
+    <li>Votre diplôme ou niveau d'études renseigné</li>
+    <li>Au moins une matière et un niveau sélectionnés</li>
+    <li>Un tarif horaire défini</li>
+  </ul>
+</div>
+
+<p style="color:#524036;line-height:1.75;font-size:15px;margin:0 0 24px;">
+  Complétez votre profil depuis votre tableau de bord, puis contactez-nous pour une nouvelle vérification.
+</p>
+
+${btn('✏️ Mettre à jour mon profil', `${FRONTEND}?page=dashboard`)}
+`,
+  });
+}
+
 module.exports = {
   welcomeEmail,
   verifyEmail,
@@ -337,4 +405,6 @@ module.exports = {
   otpEmail,
   newRequestEmail,
   requestStatusEmail,
+  tuteurApprovedEmail,
+  tuteurRejectedEmail,
 };

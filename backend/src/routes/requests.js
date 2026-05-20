@@ -83,6 +83,44 @@ router.post('/', auth, validate(requestCreateSchema), async (req, res) => {
   }
 });
 
+// ─── DELETE /api/requests/:id — annuler une demande EN_ATTENTE (élève seulement) ─
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'ELEVE')
+      return res.status(403).json({ error: 'Réservé aux élèves' });
+
+    const existing = await prisma.tutoringRequest.findUnique({
+      where: { id: req.params.id },
+      include: {
+        tuteur: { select: { id: true, prenom: true, nom: true } },
+        eleve:  { select: { prenom: true, nom: true } },
+      },
+    });
+    if (!existing) return res.status(404).json({ error: 'Demande introuvable' });
+    if (existing.eleveId !== req.user.id) return res.status(403).json({ error: 'Accès refusé' });
+    if (existing.status !== 'EN_ATTENTE')
+      return res.status(409).json({ error: 'Seules les demandes en attente peuvent être annulées' });
+
+    await prisma.tutoringRequest.delete({ where: { id: req.params.id } });
+
+    const { tuteur, eleve, matiere } = existing;
+    prisma.notification.create({
+      data: {
+        userId: tuteur.id,
+        type: 'request_cancelled',
+        emoji: '↩️',
+        title: 'Demande annulée',
+        body: `${eleve.prenom} ${eleve.nom} a annulé sa demande de ${matiere}.`,
+      },
+    }).then(n => push(tuteur.id, n)).catch(() => {});
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // ─── PATCH /api/requests/:id — changer le statut ────────────────────────────────
 router.patch('/:id', auth, validate(requestUpdateSchema), async (req, res) => {
   try {

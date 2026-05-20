@@ -30,7 +30,7 @@ const SANS = '"Inter", sans-serif';
 // ─── Composants utilitaires réutilisables dans le dashboard ──────────────────
 
 // Badge de statut de demande avec couleur sémantique (vert/orange/rouge)
-const StatusPill = ({ status }) => {
+export const StatusPill = ({ status }) => {
   const map = {
     CONFIRMEE: { bg: '#DCFCE7', color: '#166534', label: '✓ Confirmée' },
     EN_ATTENTE: { bg: '#FEF3C7', color: '#B45309', label: '⏳ En attente' },
@@ -144,9 +144,14 @@ const ContactModal = ({ data, onClose }) => {
 };
 
 // ─── DASHBOARD ÉLÈVE ─────────────────────────────────────────────────────────
-const DashboardEleve = ({ user, requests, onTuteurs }) => {
+const DashboardEleve = ({ user, requests, onTuteurs, onUpdateRequests }) => {
   const [modal, setModal] = useState(null);
   const myReqs = requests;
+
+  const annuler = async (id) => {
+    await api.delete(`/requests/${id}`).catch(() => {});
+    onUpdateRequests();
+  };
   const confirmed = myReqs.filter(r => r.status === 'CONFIRMEE');
   const pending = myReqs.filter(r => r.status === 'EN_ATTENTE');
   const isMobile = useIsMobile();
@@ -199,6 +204,12 @@ const DashboardEleve = ({ user, requests, onTuteurs }) => {
                         })}
                         style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '100px', border: 'none', backgroundColor: C.accent, color: C.primary, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
                         <Phone size={12} /> Coordonnées
+                      </motion.button>
+                    )}
+                    {r.status === 'EN_ATTENTE' && (
+                      <motion.button whileTap={{ scale: 0.95 }} onClick={() => annuler(r.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '100px', border: 'none', backgroundColor: '#FEE2E2', color: '#991B1B', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                        <X size={12} /> Annuler
                       </motion.button>
                     )}
                   </div>
@@ -259,6 +270,20 @@ const DashboardTuteur = ({ user, requests, onUpdateRequests }) => {
   return (
     <>
       {modal && <ContactModal data={modal} onClose={() => setModal(null)} />}
+
+      {/* Bannière de vérification en attente */}
+      {!user.verifie && (
+        <div style={{ marginBottom: '20px', backgroundColor: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span style={{ fontSize: '24px', flexShrink: 0 }}>⏳</span>
+          <div>
+            <div style={{ fontWeight: 700, color: '#C2410C', fontSize: '0.95rem', fontFamily: SANS }}>Profil en cours de vérification</div>
+            <div style={{ fontSize: '0.85rem', color: '#9A3412', fontFamily: SANS, lineHeight: 1.5, marginTop: '2px' }}>
+              Notre équipe examine votre profil. Vous serez notifié par email dès que votre compte sera validé et visible par les élèves.
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr 1fr', gap: isMobile ? '10px' : '20px' }}>
 
         <StatCard icon={Calendar} value={myReqs.length} label="Demandes reçues" />
@@ -454,6 +479,7 @@ const MonProfil = ({ user, onUserUpdate }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...user });  // copie locale pour éviter des mutations
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState('');
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -469,28 +495,37 @@ const MonProfil = ({ user, onUserUpdate }) => {
   const handlePhoto = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Réinitialiser pour permettre de re-sélectionner le même fichier
+    fileRef.current.value = '';
     if (file.size > 3 * 1024 * 1024) { showToast('Image trop grande (max 3 Mo)'); return; }
 
+    setUploading(true);
     showToast('Upload en cours…');
     try {
       const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-      const path = `${user.id}-${Date.now()}.${ext}`;
+      const path = `avatars/${user.id}-${Date.now()}.${ext}`;
 
       const uploadRes = await fetch(
-        `${SUPABASE_URL}/storage/v1/object/avatars/${path}`,
+        `${SUPABASE_URL}/storage/v1/object/${path}`,
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'Content-Type': file.type,
+            'x-upsert': 'true',
           },
           body: file,
         }
       );
 
-      if (!uploadRes.ok) { showToast('Échec de l\'upload. Réessayez.'); return; }
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        console.error('[photo upload]', uploadRes.status, err);
+        showToast('Échec de l\'upload. Réessayez.');
+        return;
+      }
 
-      const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
+      const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/${path}`;
       const saved = await api.put(`/users/${user.id}`, { photo: photoUrl });
       if (saved.error) { showToast('Erreur lors de la sauvegarde.'); return; }
 
@@ -499,6 +534,8 @@ const MonProfil = ({ user, onUserUpdate }) => {
       showToast('Photo mise à jour !');
     } catch {
       showToast('Erreur lors de l\'upload de la photo.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -545,8 +582,8 @@ const MonProfil = ({ user, onUserUpdate }) => {
                 ? <img src={form.photo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                 : <span style={{ fontSize: '42px' }}>{isTuteur ? '👨🏾‍🏫' : '🎓'}</span>}
             </div>
-            <motion.button onClick={() => fileRef.current?.click()} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Changer la photo"
-              style={{ position: 'absolute', bottom: '-6px', right: '-6px', width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${C.surface}`, backgroundColor: C.primary, color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+            <motion.button onClick={() => !uploading && fileRef.current?.click()} whileHover={{ scale: uploading ? 1 : 1.1 }} whileTap={{ scale: uploading ? 1 : 0.9 }} title={uploading ? 'Upload en cours…' : 'Changer la photo'}
+              style={{ position: 'absolute', bottom: '-6px', right: '-6px', width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${C.surface}`, backgroundColor: uploading ? C.muted : C.primary, color: '#fff', cursor: uploading ? 'wait' : 'pointer', display: 'grid', placeItems: 'center' }}>
               <Camera size={12} />
             </motion.button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handlePhoto} />
@@ -1443,7 +1480,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
           setNotifications(prev => [n, ...prev]);
         } catch {}
       });
-      es.onerror = () => { es.close(); es = null; };
+      // Ne pas fermer — EventSource se reconnecte automatiquement après un cold start.
     }
 
     // Polling toutes les 30s comme fallback (si SSE coupé)
@@ -1564,7 +1601,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
             <motion.div key={activeNav} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}
               style={activeNav === 'messages' ? { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 } : {}}>
               {activeNav === 'dashboard' && (isEleve
-                ? <DashboardEleve user={currentUser} requests={requests} onTuteurs={onTuteurs} />
+                ? <DashboardEleve user={currentUser} requests={requests} onTuteurs={onTuteurs} onUpdateRequests={fetchRequests} />
                 : <DashboardTuteur user={currentUser} requests={requests} onUpdateRequests={fetchRequests} />
               )}
               {activeNav === 'messages'       && <MessagesPanel currentUser={currentUser} />}

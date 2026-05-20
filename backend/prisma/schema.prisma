@@ -60,6 +60,9 @@ model User {
   emailVerified    Boolean   @default(false)
   emailVerifyToken String?
 
+  // Vérification manuelle par un admin (tuteurs uniquement)
+  verifie          Boolean   @default(false)
+
   // Réinitialisation mot de passe
   resetToken       String?
   resetTokenExpiry DateTime?

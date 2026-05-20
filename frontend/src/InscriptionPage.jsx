@@ -246,32 +246,24 @@ const Step2 = ({ data, set, errors }) => {
       <InputField icon={Mail} label="Adresse email" required type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="exemple@gmail.com" error={errors.email} />
       <InputField icon={Phone} label="Téléphone" required value={data.tel} onChange={e => set('tel', e.target.value)} placeholder="+221 78 347 61 74" error={errors.tel} />
       <div style={{ gridColumn: '1 / -1' }}>
-        <PasswordField label="Mot de passe" required value={data.password} onChange={e => set('password', e.target.value)} error={errors.password} />
+        <PasswordField label="Mot de passe" required value={data.password} onChange={e => set('password', e.target.value)} error={errors.password} showStrength />
       </div>
       <div style={{ gridColumn: '1 / -1' }}>
         <PasswordField label="Confirmer le mot de passe" required value={data.confirm} onChange={e => set('confirm', e.target.value)} error={errors.confirm} placeholder="Répétez votre mot de passe" />
       </div>
     </div>
 
-    {/* Password strength */}
-    {data.password && (
-      <div style={{ marginTop: '8px' }}>
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-          {[1, 2, 3, 4].map(i => {
-            const strength = [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(data.password)).length;
-            return <div key={i} style={{ flex: 1, height: '4px', borderRadius: '99px', backgroundColor: strength >= i ? (strength <= 2 ? '#EF4444' : strength === 3 ? C.secondary : '#22C55E') : C.border, transition: 'background-color 0.3s' }} />;
-          })}
-        </div>
-        <span style={{ fontSize: '0.82rem', color: C.light, fontFamily: SANS }}>Force du mot de passe</span>
-      </div>
-    )}
   </motion.div>
   );
 };
 
-// sub-component to avoid duplicate declaration
-const PasswordField = ({ label, required, value, onChange, error, placeholder }) => {
+const PW_STRENGTH_LABELS = ['Très faible', 'Faible', 'Moyen', 'Fort', 'Très fort'];
+const PW_STRENGTH_COLORS = ['#DC2626', '#F59E0B', '#FBBF24', '#10B981', '#059669'];
+export const pwStrength = (p) => [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(p)).length;
+
+const PasswordField = ({ label, required, value, onChange, error, placeholder, showStrength }) => {
   const [show, setShow] = useState(false);
+  const s = showStrength ? pwStrength(value) : 0;
   return (
     <Field label={label} required={required} error={error}>
       <div style={{ position: 'relative' }}>
@@ -285,6 +277,16 @@ const PasswordField = ({ label, required, value, onChange, error, placeholder })
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
+      {showStrength && value && (
+        <div style={{ marginTop: '6px' }}>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} style={{ flex: 1, height: '4px', borderRadius: '4px', backgroundColor: i < s ? PW_STRENGTH_COLORS[s] : C.border, transition: 'background-color 0.3s' }} />
+            ))}
+          </div>
+          <span style={{ fontSize: '0.8rem', color: PW_STRENGTH_COLORS[s], fontWeight: 600, fontFamily: SANS }}>{PW_STRENGTH_LABELS[s]}</span>
+        </div>
+      )}
     </Field>
   );
 };
@@ -561,7 +563,7 @@ const StepSuccess = ({ role, prenom, onGoHome, onSuccess }) => (
 // ─── VALIDATION côté client ───────────────────────────────────────────────────
 // Appliquée avant chaque clic "Continuer" pour donner un retour immédiat sans appel API.
 // La validation serveur (Zod) reste la source de vérité ultime.
-const validate = (step, role, info, profile) => {
+export const validate = (step, role, info, profile) => {
   const errs = {};
   if (step === 2) {
     if (!info.prenom.trim()) errs.prenom = 'Le prénom est requis';

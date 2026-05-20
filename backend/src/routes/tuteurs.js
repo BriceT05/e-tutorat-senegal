@@ -2,46 +2,42 @@
 // Accessible sans authentification pour que les visiteurs puissent parcourir les profils.
 const router = require('express').Router();
 const prisma = require('../prisma');
+const { Prisma } = require('@prisma/client');
 
 // GET /api/tuteurs?matiere=&region=&niveau=&mode=&tarifMax=&q=
-// Les filtres structurés (matiere, region, niveau, mode, tarifMax) sont appliqués en BDD.
-// La recherche texte libre (q) est appliquée en mémoire après récupération, car Prisma
-// ne supporte pas facilement la recherche dans les tableaux JSON (matieres, bio).
+// Tous les filtres, y compris la recherche texte libre (q), sont appliqués en SQL.
+// q utilise ILIKE sur les colonnes scalaires + unnest() pour les tableaux matieres.
 router.get('/', async (req, res) => {
   try {
     const { matiere, region, niveau, mode, tarifMax, q } = req.query;
 
-    const where = { role: 'TUTEUR' };
-
-    if (region)   where.region    = region;
-    if (mode)     where.modeCours = mode;
-    if (tarifMax) where.tarif     = { lte: parseInt(tarifMax) };
-    // { has: value } est l'opérateur Prisma pour chercher dans un tableau PostgreSQL
-    if (matiere)  where.matieres  = { has: matiere };
-    if (niveau)   where.niveaux   = { has: niveau };
-
-    let tuteurs = await prisma.user.findMany({
-      where,
-      select: {
-        id: true, prenom: true, nom: true, photo: true,
-        region: true, bio: true, diplome: true,
-        matieres: true, niveaux: true, tarif: true, modeCours: true,
-        noteAvg: true, nbAvis: true, createdAt: true,
-        experience: true, methodologie: true, disponibilites: true,
-        tauxReponse: true, delaiReponse: true, totalEleves: true,
-        langues: true, formations: true,
-      },
-    });
-
-    // Filtre texte libre sur nom, matières et bio (insensible à la casse)
+    const conds = [
+      Prisma.sql`role = 'TUTEUR'::"Role"`,
+      Prisma.sql`verifie = true`,
+    ];
+    if (region)   conds.push(Prisma.sql`region = ${region}`);
+    if (mode)     conds.push(Prisma.sql`"modeCours" = ${mode}`);
+    if (tarifMax) conds.push(Prisma.sql`tarif <= ${parseInt(tarifMax, 10)}`);
+    if (matiere)  conds.push(Prisma.sql`${matiere} = ANY(matieres)`);
+    if (niveau)   conds.push(Prisma.sql`${niveau} = ANY(niveaux)`);
     if (q) {
-      const lq = q.toLowerCase();
-      tuteurs = tuteurs.filter(t =>
-        `${t.prenom} ${t.nom}`.toLowerCase().includes(lq) ||
-        t.matieres.some(m => m.toLowerCase().includes(lq)) ||
-        t.bio?.toLowerCase().includes(lq)
-      );
+      const p = `%${q}%`;
+      conds.push(Prisma.sql`(
+        prenom ILIKE ${p} OR nom ILIKE ${p}
+        OR COALESCE(bio, '') ILIKE ${p}
+        OR COALESCE(region, '') ILIKE ${p}
+        OR EXISTS (SELECT 1 FROM unnest(matieres) m(val) WHERE val ILIKE ${p})
+      )`);
     }
+
+    const tuteurs = await prisma.$queryRaw`
+      SELECT id, prenom, nom, photo, region, bio, diplome, matieres, niveaux,
+             tarif, "modeCours", "noteAvg", "nbAvis", "createdAt",
+             experience, methodologie, disponibilites,
+             "tauxReponse", "delaiReponse", "totalEleves", langues, formations
+      FROM users
+      WHERE ${Prisma.join(conds, ' AND ')}
+    `;
 
     res.json(tuteurs);
   } catch (err) {

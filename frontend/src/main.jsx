@@ -50,6 +50,22 @@ function App() {
   // scroll to top à chaque changement de page pour simuler la navigation standard
   const nav = (p) => { setPage(p); window.scrollTo(0, 0) }
 
+  // Titre de l'onglet dynamique — aide la navigation par onglets et le contexte
+  useEffect(() => {
+    const titles = {
+      home:        'e-Tutorat Sénégal — Cours particuliers',
+      tuteurs:     'Trouver un tuteur — e-Tutorat',
+      profil:      selectedTuteur ? `${selectedTuteur.prenom} ${selectedTuteur.nom} — e-Tutorat` : 'Profil — e-Tutorat',
+      dashboard:   'Mon espace — e-Tutorat',
+      inscription: 'Inscription — e-Tutorat',
+      connexion:   'Connexion — e-Tutorat',
+      matieres:    'Matières disponibles — e-Tutorat',
+      blog:        'Blog — e-Tutorat',
+      legal:       'Mentions légales — e-Tutorat',
+    }
+    document.title = titles[page] ?? 'e-Tutorat'
+  }, [page, selectedTuteur])
+
   // Persiste le token JWT et l'objet user dans localStorage pour survivre aux rechargements
   const login = (token, user) => {
     localStorage.setItem('etutorat_token', token)
@@ -112,6 +128,7 @@ function App() {
       tuteurBase={selectedTuteur}
       onBack={() => nav('tuteurs')}
       onGoTuteurs={() => nav('tuteurs')}
+      onGoHome={() => nav('home')}
       currentUser={currentUser}
       onNeedAuth={() => nav('connexion')}
     />

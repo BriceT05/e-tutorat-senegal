@@ -40,6 +40,7 @@ router.get('/stream', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // désactive le buffer nginx/Render
   res.flushHeaders();
+  res.write('retry: 10000\n\n');  // attendre 10s avant de reconnecter (cold start Render)
   res.write(':connected\n\n');
 
   const unregister = register(userId, res);

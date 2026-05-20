@@ -6,7 +6,7 @@ import useIsMobile from './useIsMobile';
 import api from './api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, BookOpen, Star, MapPin, Clock, Users, Check,
+  BookOpen, Star, MapPin, Clock, Users, Check,
   Heart, Share2, MessageCircle, Video, Home, Globe,
   GraduationCap, Award, ChevronRight, X, Calendar,
   CheckCircle2, AlertCircle, Briefcase,
@@ -22,7 +22,7 @@ const SANS = '"Inter", sans-serif';
 
 // Normalise et complète un objet tuteur avec des valeurs par défaut.
 // Les disponibilités sont une grille 7 jours × 7 plages horaires (booléens).
-const buildTuteur = (t) => ({
+export const buildTuteur = (t) => ({
   ...t,
   experience: t.experience || null,
   langues: t.langues || [],
@@ -447,13 +447,26 @@ const ReviewForm = ({ tuteurId, onSubmitted }) => {
 };
 
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
-export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, currentUser, onNeedAuth }) {
+export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, onGoHome, currentUser, onNeedAuth }) {
   const tuteur = buildTuteur(tuteurBase);
   const [tab, setTab] = useState('apropos');
   const [modal, setModal] = useState(false);
   const [modalInitSlots, setModalInitSlots] = useState([]);
   const [toast, setToast] = useState(false);
-  const [fav, setFav] = useState(false);
+  const [fav, setFav] = useState(() => {
+    try { return (JSON.parse(localStorage.getItem('etutorat_favoris')) || []).includes(tuteur.id); }
+    catch { return false; }
+  });
+  const toggleFav = () => setFav(f => {
+    const next = !f;
+    try {
+      const ids = JSON.parse(localStorage.getItem('etutorat_favoris')) || [];
+      localStorage.setItem('etutorat_favoris', JSON.stringify(
+        next ? [...new Set([...ids, tuteur.id])] : ids.filter(id => id !== tuteur.id)
+      ));
+    } catch {}
+    return next;
+  });
   const isMobile = useIsMobile();
 
   // ── Avis ──────────────────────────────────────────────────────────────────
@@ -492,13 +505,10 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
 
   const handleConfirm = async ({ matiere, mode, duree, selectedSlots = [], jours: fallbackJours = [], plages = [], message }) => {
     const jours = selectedSlots.length > 0
-      ? [...new Set(selectedSlots.map(s => s.jour))]
+      ? selectedSlots.map(s => `${s.jour} ${DISPO_HEURES[s.hi]}`)
       : fallbackJours;
     let fullMessage = message;
-    if (selectedSlots.length > 0) {
-      const creneaux = selectedSlots.map(s => `${s.jour} ${DISPO_HEURES[s.hi]}`).join(', ');
-      fullMessage = `Créneaux souhaités : ${creneaux}${message ? '\n' + message : ''}`;
-    } else if (plages.length > 0) {
+    if (selectedSlots.length === 0 && plages.length > 0) {
       fullMessage = `Horaires préférés : ${plages.join(', ')}${message ? '\n' + message : ''}`;
     }
     if (currentUser) {
@@ -526,12 +536,16 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, curr
       {/* Navbar */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: 'rgba(255,253,245,0.95)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.accent}`, padding: '0 5%' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', height: '68px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontWeight: 600, fontSize: '0.95rem', flexShrink: 0 }}>
-            <ArrowLeft size={18} /> Retour
-          </button>
+          <nav aria-label="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0, fontFamily: SANS }}>
+            <button onClick={onGoHome} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.88rem', fontWeight: 600, padding: 0 }}>Accueil</button>
+            <span style={{ color: C.light, fontSize: '0.85rem' }}>›</span>
+            <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.88rem', fontWeight: 600, padding: 0 }}>Tuteurs</button>
+            <span style={{ color: C.light, fontSize: '0.85rem' }}>›</span>
+            <span style={{ color: C.text, fontSize: '0.88rem', fontWeight: 700, maxWidth: isMobile ? '120px' : '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tuteur.prenom} {tuteur.nom}</span>
+          </nav>
           <img src="/logo.png" alt="e-Tutorat" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-            <button onClick={() => setFav(f => !f)}
+            <button onClick={toggleFav}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: isMobile ? '8px' : '8px 16px', borderRadius: '100px', border: `1.5px solid ${fav ? C.primary : C.border}`, backgroundColor: fav ? C.accent : 'transparent', color: fav ? C.primary : C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>
               <Heart size={16} fill={fav ? C.primary : 'transparent'} /> {!isMobile && (fav ? 'Favori' : 'Ajouter')}
             </button>

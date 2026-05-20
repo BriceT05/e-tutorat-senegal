@@ -6,6 +6,9 @@ const auth = require('../middleware/auth');
 const { slugify } = require('./articles');
 const validate = require('../middleware/validate');
 const { roleUpdateSchema, articleSchema, articleUpdateSchema } = require('../schemas');
+const { sendEmail } = require('../emails/sender');
+const T = require('../emails/templates');
+const { push } = require('../services/push');
 
 // Middleware de garde — refuse tout accès si le rôle n'est pas ADMIN
 const adminOnly = (req, res, next) => {
@@ -16,13 +19,14 @@ const adminOnly = (req, res, next) => {
 // GET /api/admin/stats
 router.get('/stats', auth, adminOnly, async (req, res) => {
   try {
-    const [totalUsers, totalTuteurs, totalEleves, totalRequests, totalMessages, totalConversations] = await Promise.all([
+    const [totalUsers, totalTuteurs, totalEleves, totalRequests, totalMessages, totalConversations, tuteursEnAttente] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'TUTEUR' } }),
       prisma.user.count({ where: { role: 'ELEVE' } }),
       prisma.tutoringRequest.count(),
       prisma.message.count(),
       prisma.conversation.count(),
+      prisma.user.count({ where: { role: 'TUTEUR', verifie: false } }),
     ]);
     const requestsByStatus = await prisma.tutoringRequest.groupBy({
       by: ['status'],
@@ -31,6 +35,7 @@ router.get('/stats', auth, adminOnly, async (req, res) => {
     const statusMap = Object.fromEntries(requestsByStatus.map(r => [r.status, r._count.status]));
     res.json({
       totalUsers, totalTuteurs, totalEleves, totalRequests, totalMessages, totalConversations,
+      tuteursEnAttente,
       requestsEnAttente: statusMap.EN_ATTENTE || 0,
       requestsConfirmees: statusMap.CONFIRMEE || 0,
       requestsRefusees: statusMap.REFUSEE || 0,
@@ -137,6 +142,98 @@ router.get('/requests', auth, adminOnly, async (req, res) => {
     ]);
     res.json({ requests, total, page: Number(page), limit: Number(limit) });
   } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── GET /api/admin/tuteurs/pending — tuteurs en attente de vérification ──────
+router.get('/tuteurs/pending', auth, adminOnly, async (req, res) => {
+  try {
+    const tuteurs = await prisma.user.findMany({
+      where: { role: 'TUTEUR', verifie: false },
+      select: {
+        id: true, prenom: true, nom: true, email: true, photo: true,
+        region: true, bio: true, diplome: true, matieres: true, niveaux: true,
+        tarif: true, modeCours: true, experience: true, langues: true, formations: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(tuteurs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── PATCH /api/admin/tuteurs/:id/approve — approuver un tuteur ───────────────
+router.patch('/tuteurs/:id/approve', auth, adminOnly, async (req, res) => {
+  try {
+    const tuteur = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { verifie: true },
+      select: { id: true, prenom: true, nom: true, email: true, verifie: true },
+    });
+
+    // Notification in-app + email (sans bloquer la réponse)
+    Promise.all([
+      prisma.notification.create({
+        data: {
+          userId: tuteur.id,
+          type: 'account_verified',
+          emoji: '✅',
+          title: 'Profil vérifié !',
+          body: 'Votre profil tuteur a été validé. Vous êtes maintenant visible par les élèves.',
+        },
+      }).then(n => { push(tuteur.id, n); return n; }),
+      tuteur.email && sendEmail({
+        to: tuteur.email,
+        subject: '✅ Votre profil tuteur est validé — e-Tutorat Sénégal',
+        html: T.tuteurApprovedEmail({ prenom: tuteur.prenom }),
+      }),
+    ]).catch(err => console.error('[APPROVE NOTIF]', err));
+
+    res.json(tuteur);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Tuteur introuvable' });
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── PATCH /api/admin/tuteurs/:id/reject — rejeter un tuteur ─────────────────
+router.patch('/tuteurs/:id/reject', auth, adminOnly, async (req, res) => {
+  try {
+    if (req.params.id === req.user.id)
+      return res.status(400).json({ error: 'Impossible de modifier son propre compte' });
+
+    const tuteur = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role: 'ELEVE', verifie: false },
+      select: { id: true, prenom: true, nom: true, email: true, role: true },
+    });
+
+    Promise.all([
+      prisma.notification.create({
+        data: {
+          userId: tuteur.id,
+          type: 'account_rejected',
+          emoji: '❌',
+          title: 'Profil non validé',
+          body: 'Votre profil tuteur n\'a pas pu être validé. Consultez votre email pour plus d\'informations.',
+        },
+      }).then(n => { push(tuteur.id, n); return n; }),
+      tuteur.email && sendEmail({
+        to: tuteur.email,
+        subject: 'Votre profil tuteur — e-Tutorat Sénégal',
+        html: T.tuteurRejectedEmail({ prenom: tuteur.prenom }),
+      }),
+    ]).catch(err => console.error('[REJECT NOTIF]', err));
+
+    res.json(tuteur);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Tuteur introuvable' });
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
   }

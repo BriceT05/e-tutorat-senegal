@@ -9,7 +9,7 @@ import {
   Home, Users, BookOpen, LogOut, Search, Trash2,
   ChevronLeft, ChevronRight, Shield, RefreshCw,
   TrendingUp, MessageSquare, CheckCircle2, Clock, X,
-  PenLine, Plus, Eye, EyeOff, FileText,
+  PenLine, Plus, Eye, EyeOff, FileText, UserCheck, UserX,
 } from 'lucide-react';
 
 const C = {
@@ -62,11 +62,12 @@ const StatCard = ({ icon: Icon, value, label, color = C.primary, sub }) => (
   </div>
 );
 
-const NavItem = ({ icon: Icon, label, active, onClick }) => (
+const NavItem = ({ icon: Icon, label, active, onClick, badge }) => (
   <motion.button onClick={onClick} whileHover={{ x: 3 }}
     style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '14px', border: 'none', backgroundColor: active ? C.accent : 'transparent', color: active ? C.primary : C.muted, cursor: 'pointer', width: '100%', textAlign: 'left', fontFamily: SANS, fontWeight: active ? 700 : 500, fontSize: '0.95rem', transition: 'all 0.2s' }}>
     <Icon size={20} />
     {label}
+    {badge > 0 && <span style={{ marginLeft: 'auto', backgroundColor: '#DC2626', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, flexShrink: 0 }}>{badge}</span>}
   </motion.button>
 );
 
@@ -152,6 +153,23 @@ const AdminDashboard = ({ stats, onRefresh, loading }) => {
         <StatCard icon={MessageSquare} value={stats.totalMessages} label="Messages échangés" color="#0EA5E9"
           sub={`${stats.totalConversations} conversations`} />
       </div>
+
+      {/* Tuteurs en attente de vérification */}
+      {stats.tuteursEnAttente > 0 && (
+        <div style={{ backgroundColor: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FEE2E2', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <UserCheck size={20} color="#DC2626" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: '#991B1B', fontSize: '0.95rem', fontFamily: SANS }}>
+              {stats.tuteursEnAttente} tuteur{stats.tuteursEnAttente > 1 ? 's' : ''} en attente de vérification
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#B91C1C', fontFamily: SANS }}>
+              Examinez les profils dans l'onglet Vérifications
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Taux de confirmation */}
       {stats.totalRequests > 0 && (
@@ -658,6 +676,145 @@ const AdminBlog = () => {
   );
 };
 
+// ─── Section : Vérifications tuteurs ─────────────────────────────────────────
+const AdminVerifications = ({ onStatsRefresh }) => {
+  const [tuteurs, setTuteurs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState({});
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const fetchPending = useCallback(() => {
+    setLoading(true);
+    api.get('/admin/tuteurs/pending')
+      .then(data => setTuteurs(Array.isArray(data) ? data : []))
+      .catch(() => setTuteurs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchPending(); }, [fetchPending]);
+
+  const handleAction = async (id, action) => {
+    setActionLoading(prev => ({ ...prev, [id]: action }));
+    const res = await api.patch(`/admin/tuteurs/${id}/${action}`);
+    setActionLoading(prev => ({ ...prev, [id]: null }));
+    if (res.error) { showToast(`Erreur : ${res.error}`); return; }
+    setTuteurs(prev => prev.filter(t => t.id !== id));
+    showToast(action === 'approve' ? '✅ Tuteur approuvé — il est maintenant visible.' : '❌ Tuteur rejeté — compte converti en élève.');
+    onStatsRefresh();
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ backgroundColor: '#DCFCE7', border: '1.5px solid #86EFAC', borderRadius: '14px', padding: '13px 20px', color: '#166534', fontWeight: 600, fontSize: '0.92rem', fontFamily: SANS }}>
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ margin: 0, color: C.muted, fontSize: '0.9rem', fontFamily: SANS }}>
+          {loading ? 'Chargement…' : `${tuteurs.length} tuteur${tuteurs.length !== 1 ? 's' : ''} en attente`}
+        </p>
+        <motion.button onClick={fetchPending} whileTap={{ scale: 0.95 }}
+          style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.accent}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '0.85rem', fontFamily: SANS }}>
+          <RefreshCw size={14} /> Actualiser
+        </motion.button>
+      </div>
+
+      {!loading && tuteurs.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '64px 32px', backgroundColor: C.surface, borderRadius: '20px', border: `1px solid ${C.accent}` }}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+          <div style={{ fontFamily: SERIF, fontSize: '1.2rem', color: C.text, fontWeight: 700, marginBottom: '8px' }}>Tout est à jour</div>
+          <div style={{ color: C.light, fontSize: '0.9rem', fontFamily: SANS }}>Aucun tuteur en attente de vérification.</div>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {tuteurs.map(t => (
+          <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} layout
+            style={{ backgroundColor: C.surface, borderRadius: '20px', padding: '24px', border: `1px solid ${C.accent}`, boxShadow: '0 4px 16px rgba(62,42,31,0.05)' }}>
+
+            {/* En-tête tuteur */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '16px', overflow: 'hidden', flexShrink: 0, backgroundColor: C.accent, display: 'grid', placeItems: 'center', fontSize: '24px' }}>
+                {t.photo
+                  ? <img src={t.photo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  : '👨🏾‍🏫'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, color: C.text, fontSize: '1.05rem', fontFamily: SANS }}>{t.prenom} {t.nom}</div>
+                <div style={{ fontSize: '0.82rem', color: C.light, fontFamily: SANS }}>{t.email}</div>
+                <div style={{ fontSize: '0.8rem', color: C.muted, fontFamily: SANS, marginTop: '2px' }}>
+                  {t.region && `📍 ${t.region} · `}Inscrit le {fmtDate(t.createdAt)}
+                </div>
+              </div>
+              {t.tarif && (
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontWeight: 800, color: C.primary, fontSize: '1.1rem', fontFamily: SANS }}>{Number(t.tarif).toLocaleString('fr-FR')} FCFA</div>
+                  <div style={{ fontSize: '0.75rem', color: C.light, fontFamily: SANS }}>/ heure</div>
+                </div>
+              )}
+            </div>
+
+            {/* Diplôme */}
+            {t.diplome && (
+              <div style={{ marginBottom: '12px', padding: '10px 14px', backgroundColor: '#F0F9FF', borderRadius: '10px', border: '1px solid #BAE6FD' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0369A1', fontFamily: SANS }}>🎓 Diplôme : </span>
+                <span style={{ fontSize: '0.85rem', color: '#0C4A6E', fontFamily: SANS }}>{t.diplome}</span>
+              </div>
+            )}
+
+            {/* Bio */}
+            {t.bio && (
+              <p style={{ margin: '0 0 14px', fontSize: '0.88rem', color: C.muted, lineHeight: 1.6, fontFamily: SANS, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {t.bio}
+              </p>
+            )}
+
+            {/* Matières */}
+            {t.matieres?.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+                {t.matieres.map(m => (
+                  <span key={m} style={{ backgroundColor: `${C.primary}15`, color: C.primary, padding: '3px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 700, fontFamily: SANS }}>{m}</span>
+                ))}
+                {t.modeCours && (
+                  <span style={{ backgroundColor: '#F0FDF4', color: '#166534', padding: '3px 10px', borderRadius: '100px', fontSize: '0.78rem', fontWeight: 700, fontFamily: SANS }}>📍 {t.modeCours}</span>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <motion.button
+                onClick={() => handleAction(t.id, 'approve')}
+                disabled={!!actionLoading[t.id]}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px 20px', borderRadius: '12px', border: 'none', backgroundColor: '#16A34A', color: '#fff', fontSize: '0.92rem', fontWeight: 700, cursor: actionLoading[t.id] ? 'default' : 'pointer', fontFamily: SANS, opacity: actionLoading[t.id] ? 0.7 : 1 }}>
+                <UserCheck size={16} />
+                {actionLoading[t.id] === 'approve' ? 'Approbation…' : 'Approuver'}
+              </motion.button>
+              <motion.button
+                onClick={() => handleAction(t.id, 'reject')}
+                disabled={!!actionLoading[t.id]}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px 20px', borderRadius: '12px', border: '1.5px solid #FECACA', backgroundColor: '#FEF2F2', color: '#DC2626', fontSize: '0.92rem', fontWeight: 700, cursor: actionLoading[t.id] ? 'default' : 'pointer', fontFamily: SANS, opacity: actionLoading[t.id] ? 0.7 : 1 }}>
+                <UserX size={16} />
+                {actionLoading[t.id] === 'reject' ? 'Rejet…' : 'Rejeter'}
+              </motion.button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function AdminPage({ currentUser, onGoHome, onLogout }) {
   const [activeNav, setActiveNav] = useState('dashboard');
@@ -675,10 +832,11 @@ export default function AdminPage({ currentUser, onGoHome, onLogout }) {
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const navItems = [
-    { id: 'dashboard', icon: TrendingUp, label: 'Tableau de bord' },
-    { id: 'users',     icon: Users,      label: 'Utilisateurs'   },
-    { id: 'requests',  icon: BookOpen,   label: 'Demandes'       },
-    { id: 'blog',      icon: PenLine,    label: 'Blog'           },
+    { id: 'dashboard',     icon: TrendingUp, label: 'Tableau de bord' },
+    { id: 'users',         icon: Users,      label: 'Utilisateurs'   },
+    { id: 'requests',      icon: BookOpen,   label: 'Demandes'       },
+    { id: 'verifications', icon: UserCheck,  label: 'Vérifications', badge: stats?.tuteursEnAttente || 0 },
+    { id: 'blog',          icon: PenLine,    label: 'Blog'           },
   ];
 
   return (
@@ -706,7 +864,7 @@ export default function AdminPage({ currentUser, onGoHome, onLogout }) {
 
         <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {navItems.map(item => (
-            <NavItem key={item.id} icon={item.icon} label={item.label} active={activeNav === item.id} onClick={() => setActiveNav(item.id)} />
+            <NavItem key={item.id} icon={item.icon} label={item.label} active={activeNav === item.id} onClick={() => setActiveNav(item.id)} badge={item.badge} />
           ))}
         </nav>
 
@@ -722,7 +880,7 @@ export default function AdminPage({ currentUser, onGoHome, onLogout }) {
         <header style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.accent}`, padding: '0 32px', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
           <div>
             <h1 style={{ fontFamily: SERIF, fontSize: '1.4rem', color: C.text, margin: 0, fontWeight: 700 }}>
-              {navItems.find(n => n.id === activeNav)?.label}
+              {navItems.find(n => n.id === activeNav)?.label ?? activeNav}
             </h1>
             <p style={{ color: C.light, fontSize: '0.82rem', margin: 0 }}>
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -740,10 +898,11 @@ export default function AdminPage({ currentUser, onGoHome, onLogout }) {
         <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
           <AnimatePresence mode="wait">
             <motion.div key={activeNav} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
-              {activeNav === 'dashboard' && <AdminDashboard stats={stats} onRefresh={fetchStats} loading={loadingStats} />}
-              {activeNav === 'users'     && <AdminUsers currentAdminId={currentUser.id} />}
-              {activeNav === 'requests'  && <AdminRequests />}
-              {activeNav === 'blog'      && <AdminBlog />}
+              {activeNav === 'dashboard'     && <AdminDashboard stats={stats} onRefresh={fetchStats} loading={loadingStats} />}
+              {activeNav === 'users'         && <AdminUsers currentAdminId={currentUser.id} />}
+              {activeNav === 'requests'      && <AdminRequests />}
+              {activeNav === 'verifications' && <AdminVerifications onStatsRefresh={fetchStats} />}
+              {activeNav === 'blog'          && <AdminBlog />}
             </motion.div>
           </AnimatePresence>
         </div>

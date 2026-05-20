@@ -1,8 +1,8 @@
 // Page de listing et recherche des tuteurs.
-// Charge tous les tuteurs depuis l'API puis applique les filtres côté client (useMemo).
-// Les filtres structurés (matière, région, etc.) sont envoyés en query params pour réduire
-// le volume de données ; la recherche texte libre est appliquée localement après réception.
-import { useState, useMemo, useEffect } from 'react';
+// La recherche texte libre (q) est envoyée en query param et filtrée en SQL côté serveur (ILIKE + unnest).
+// Les filtres structurés (matière, région, niveau, mode, tarif) sont appliqués localement via useMemo
+// sur le sous-ensemble déjà filtré par texte retourné par l'API.
+import { useState, useMemo, useEffect, useRef } from 'react';
 import useIsMobile from './useIsMobile';
 import api from './api.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -91,16 +91,31 @@ const RangeSlider = ({ value, onChange, min, max, step, format }) => (
 );
 
 // Carte tuteur animée avec délai progressif (staggered) pour un effet de chargement fluide.
-// Le bouton favori est local (non persisté) — fonctionnalité de démonstration.
 const TuteurCard = ({ t, onView, delay }) => {
-  const [fav, setFav] = useState(false);
+  const [fav, setFav] = useState(() => {
+    try { return (JSON.parse(localStorage.getItem('etutorat_favoris')) || []).includes(t.id); }
+    catch { return false; }
+  });
+  const toggleFav = e => {
+    e.stopPropagation();
+    setFav(f => {
+      const next = !f;
+      try {
+        const ids = JSON.parse(localStorage.getItem('etutorat_favoris')) || [];
+        localStorage.setItem('etutorat_favoris', JSON.stringify(
+          next ? [...new Set([...ids, t.id])] : ids.filter(id => id !== t.id)
+        ));
+      } catch {}
+      return next;
+    });
+  };
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.4 }}
       whileHover={{ y: -6, boxShadow: '0 24px 60px rgba(62,42,31,0.12)' }}
       style={{ backgroundColor: C.surface, borderRadius: '24px', padding: '28px', border: `1px solid ${C.accent}`, boxShadow: '0 4px 20px rgba(62,42,31,0.06)', cursor: 'pointer', position: 'relative', fontFamily: SANS }}>
 
       {/* Fav button */}
-      <button onClick={e => { e.stopPropagation(); setFav(f => !f); }}
+      <button onClick={toggleFav}
         style={{ position: 'absolute', top: '20px', right: '20px', background: fav ? C.accent : 'transparent', border: `1.5px solid ${fav ? C.primary : C.border}`, borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
         <Heart size={16} fill={fav ? C.primary : 'transparent'} color={fav ? C.primary : C.light} />
       </button>
@@ -241,20 +256,31 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
   const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
   const activeCount = (filters.matieres?.length || 0) + (filters.niveaux?.length || 0) + (filters.regions?.length || 0) + (filters.modes?.length || 0) + (filters.maxTarif < 10000 ? 1 : 0);
+  const searchTimeout = useRef(null);
+  const isFirstRender = useRef(true);
 
+  // Recharge les tuteurs depuis l'API à chaque changement de la recherche texte.
+  // Premier rendu : immédiat. Saisies suivantes : debounce 300 ms pour éviter un appel par touche.
   useEffect(() => {
-    api.get('/tuteurs')
-      .then(data => setTUTEURS(Array.isArray(data) ? data.map(normalizeTuteur) : []))
-      .catch(() => setTUTEURS([]))
-      .finally(() => setLoading(false));
-  }, []);
+    const delay = isFirstRender.current ? 0 : 300;
+    isFirstRender.current = false;
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      const url = search.trim() ? `/tuteurs?q=${encodeURIComponent(search.trim())}` : '/tuteurs';
+      setLoading(true);
+      api.get(url)
+        .then(data => setTUTEURS(Array.isArray(data) ? data.map(normalizeTuteur) : []))
+        .catch(() => setTUTEURS([]))
+        .finally(() => setLoading(false));
+    }, delay);
+    return () => clearTimeout(searchTimeout.current);
+  }, [search]);
 
-  // Filtrage + tri recalculé uniquement quand search, sort ou filters changent.
+  // Filtres structurés + tri appliqués localement sur le sous-ensemble retourné par l'API.
+  // La recherche texte (q) est déjà effectuée côté serveur — TUTEURS ne contient que les résultats correspondants.
   // Le mode "Les deux" côté tuteur est compatible avec "En ligne" et "À domicile" dans les filtres.
   const filtered = useMemo(() => {
     let list = TUTEURS.filter(t => {
-      const q = search.toLowerCase();
-      if (q && !t.prenom.toLowerCase().includes(q) && !t.nom.toLowerCase().includes(q) && !t.matieres.some(m => m.toLowerCase().includes(q)) && !t.region.toLowerCase().includes(q)) return false;
       if (filters.matieres.length && !filters.matieres.some(m => t.matieres.includes(m))) return false;
       if (filters.niveaux.length && !filters.niveaux.some(n => t.niveaux.includes(n))) return false;
       if (filters.regions.length && !filters.regions.includes(t.region)) return false;
@@ -268,7 +294,7 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
     else if (sort === 'price_desc') list.sort((a, b) => b.tarif - a.tarif);
     else if (sort === 'reviews') list.sort((a, b) => b.reviews - a.reviews);
     return list;
-  }, [search, sort, filters]);
+  }, [sort, filters, TUTEURS]);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.background, fontFamily: SANS }}>
@@ -277,9 +303,11 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
       {/* Navbar */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: 'rgba(255,253,245,0.95)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.accent}`, padding: '0 5%' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', minHeight: '64px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: isMobile ? 'wrap' : 'nowrap', padding: isMobile ? '10px 0' : '0' }}>
-          <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.9rem', fontWeight: 600, flexShrink: 0 }}>
-            <ArrowLeft size={16} /> Accueil
-          </button>
+          <nav aria-label="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0, fontFamily: SANS }}>
+            <button onClick={onGoHome} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.88rem', fontWeight: 600, padding: 0 }}>Accueil</button>
+            <span style={{ color: C.light, fontSize: '0.85rem' }}>›</span>
+            <span style={{ color: C.text, fontSize: '0.88rem', fontWeight: 700 }}>Tuteurs</span>
+          </nav>
           {!isMobile && (
             <img src="/logo.png" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
           )}

@@ -108,7 +108,7 @@ const requestCreateSchema = z.object({
   tuteurId: uuid,
   matiere:  str(100).min(1, 'Matière requise'),
   niveau:   optStr(100),
-  jours:    z.array(str(20)).max(7).optional().default([]),
+  jours:    z.array(str(25)).max(49).optional().default([]),
   duree:    optStr(50),
   mode:     optStr(50),
   message:  optStr(1000),
