@@ -1,4 +1,4 @@
-// Page de connexion — email+mot de passe ou code OTP sans mot de passe.
+﻿// Page de connexion — email+mot de passe ou code OTP sans mot de passe.
 // Gère également le cas où l'email n'est pas encore vérifié (flux needsVerification)
 // qui redirige directement vers le panneau OTP après la tentative de login.
 import { useState } from 'react';
@@ -231,7 +231,7 @@ export default function ConnexionPage({ onGoHome, onInscription, onSuccess }) {
         <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '1rem', fontWeight: 600, fontFamily: SANS }}>
           <ArrowLeft size={20} /> Accueil
         </button>
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         <div style={{ fontSize: isMobile ? '0.82rem' : '0.95rem', color: C.light }}>
           {!isMobile && 'Pas encore inscrit ? '}
           <span onClick={onInscription} style={{ color: C.primary, fontWeight: 700, cursor: 'pointer' }}>{isMobile ? 'S\'inscrire' : 'S\'inscrire'}</span>

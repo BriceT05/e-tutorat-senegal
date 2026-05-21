@@ -1,4 +1,4 @@
-// Page légale — deux onglets : CGU (Conditions Générales) et Politique de confidentialité.
+﻿// Page légale — deux onglets : CGU (Conditions Générales) et Politique de confidentialité.
 // Le tab initial est passé en prop depuis main.jsx selon le lien cliqué dans le footer.
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -201,7 +201,7 @@ export default function LegalPage({ tab = 'cgu', onGoHome, onGoBack }) {
         <button onClick={onGoBack || onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '0.95rem', fontWeight: 600, fontFamily: SANS }}>
           <ArrowLeft size={18} /> Retour
         </button>
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
         <div style={{ width: 80 }} />
       </header>
 

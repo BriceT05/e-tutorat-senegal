@@ -1,4 +1,4 @@
-// Page de vérification d'email — affichée quand l'utilisateur clique le lien dans son email.
+﻿// Page de vérification d'email — affichée quand l'utilisateur clique le lien dans son email.
 // Le token (?verify=...) est extrait par main.jsx et passé en prop.
 // Trois états : loading → success | error. L'appel API est déclenché dès le montage.
 import { useState, useEffect } from 'react';
@@ -34,7 +34,7 @@ export default function VerifyEmailPage({ token, onGoHome, onGoConnexion }) {
       <div style={{ position: 'absolute', top: '-15%', left: '-8%', width: '40vw', height: '40vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.18) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
 
       <header style={{ padding: '24px 5%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10 }}>
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
       </header>
 
       <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px 80px', position: 'relative', zIndex: 5 }}>

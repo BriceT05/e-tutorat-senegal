@@ -1,4 +1,4 @@
-// Tableau de bord utilisateur — espace privé après connexion.
+﻿// Tableau de bord utilisateur — espace privé après connexion.
 // Rendu conditionnel selon le rôle : élève voit ses demandes ; tuteur voit les demandes reçues.
 // Gère aussi : messagerie temps réel, notifications SSE, modification de profil, upload photo.
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -1547,7 +1547,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
       {!isMobile && (
         <aside style={{ width: '260px', flexShrink: 0, backgroundColor: C.surface, borderRight: `1px solid ${C.accent}`, position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', padding: '24px 16px', overflowY: 'auto' }}>
           <div style={{ padding: '4px 8px', marginBottom: '28px' }}>
-            <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
+            <img src="/logo.svg" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: C.accent, borderRadius: '16px', marginBottom: '24px' }}>
             <UserAvatar user={currentUser} size={42} radius="12px" />
@@ -1576,7 +1576,7 @@ export default function DashboardPage({ currentUser, onGoHome, onTuteurs, onLogo
         <header style={{ backgroundColor: C.surface, borderBottom: `1px solid ${C.accent}`, padding: isMobile ? '0 16px' : '0 32px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {isMobile && (
-              <img src="/logo.png" alt="e-Tutorat" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
+              <img src="/logo.svg" alt="e-Tutorat" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
             )}
             <h1 style={{ fontFamily: SERIF, fontSize: isMobile ? '1.1rem' : '1.5rem', color: C.text, margin: 0, fontWeight: 700 }}>
               {navItems.find(n => n.id === activeNav)?.label || 'Tableau de bord'}

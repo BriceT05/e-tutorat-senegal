@@ -1,4 +1,4 @@
-// Page 404 — affichée par main.jsx quand `page` ne correspond à aucune route connue.
+﻿// Page 404 — affichée par main.jsx quand `page` ne correspond à aucune route connue.
 import { motion } from 'framer-motion';
 import { BookOpen, Home, Search } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export default function NotFoundPage({ onGoHome, onTuteurs }) {
       {/* Logo */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
         style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '48px' }}>
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}

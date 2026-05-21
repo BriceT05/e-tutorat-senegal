@@ -1,4 +1,4 @@
-// Page de réinitialisation de mot de passe.
+﻿// Page de réinitialisation de mot de passe.
 // Le token arrivé en query string (?reset=...) est transmis depuis main.jsx en prop.
 // Après succès, nettoie l'URL avec replaceState pour éviter une reboucle si rechargée.
 import { useState } from 'react';
@@ -85,7 +85,7 @@ export default function ResetPasswordPage({ token, onGoHome, onGoConnexion }) {
         <button onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: '1rem', fontWeight: 600, fontFamily: SANS }}>
           <ArrowLeft size={20} /> Accueil
         </button>
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
         <div style={{ width: 120 }} />
       </header>
 

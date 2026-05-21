@@ -1,4 +1,4 @@
-// Page de listing et recherche des tuteurs.
+﻿// Page de listing et recherche des tuteurs.
 // La recherche texte libre (q) est envoyée en query param et filtrée en SQL côté serveur (ILIKE + unnest).
 // Les filtres structurés (matière, région, niveau, mode, tarif) sont appliqués localement via useMemo
 // sur le sous-ensemble déjà filtré par texte retourné par l'API.
@@ -309,7 +309,7 @@ export default function TuteursPage({ onGoHome, onViewTuteur, currentUser }) {
             <span style={{ color: C.text, fontSize: '0.88rem', fontWeight: 700 }}>Tuteurs</span>
           </nav>
           {!isMobile && (
-            <img src="/logo.png" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <img src="/logo.svg" alt="e-Tutorat" style={{ height: '40px', width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
           )}
 
           {/* Search bar */}

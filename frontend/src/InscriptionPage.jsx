@@ -1,4 +1,4 @@
-// Page d'inscription en 4 étapes : choix du rôle → infos personnelles → profil → OTP.
+﻿// Page d'inscription en 4 étapes : choix du rôle → infos personnelles → profil → OTP.
 // AnimatePresence assure les transitions entre étapes sans saut visuel.
 // L'étape 3 diffère selon le rôle (Step3Eleve vs Step3Tuteur).
 import { useState, useEffect } from 'react';
@@ -665,7 +665,7 @@ export default function InscriptionPage({ onGoHome, onSuccess, onGoConnexion }) 
           <ArrowLeft size={18} /> {!isMobile && 'Retour à l\'accueil'}
         </button>
 
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
 
         <div style={{ fontSize: isMobile ? '0.82rem' : '0.95rem', color: C.light, fontFamily: SANS }}>
           {!isMobile && 'Déjà inscrit ? '}

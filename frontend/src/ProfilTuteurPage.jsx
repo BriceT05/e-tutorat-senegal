@@ -1,4 +1,4 @@
-// Page de profil détaillé d'un tuteur — accessible depuis la liste ou un lien direct.
+﻿// Page de profil détaillé d'un tuteur — accessible depuis la liste ou un lien direct.
 // Charge les avis en arrière-plan et permet à un élève connecté d'envoyer une demande.
 // La demande passe par un modal multi-étapes (matière → horaires → message → confirmation).
 import { useState, useEffect } from 'react';
@@ -543,7 +543,7 @@ export default function ProfilTuteurPage({ tuteurBase, onBack, onGoTuteurs, onGo
             <span style={{ color: C.light, fontSize: '0.85rem' }}>›</span>
             <span style={{ color: C.text, fontSize: '0.88rem', fontWeight: 700, maxWidth: isMobile ? '120px' : '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tuteur.prenom} {tuteur.nom}</span>
           </nav>
-          <img src="/logo.png" alt="e-Tutorat" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
+          <img src="/logo.svg" alt="e-Tutorat" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
             <button onClick={toggleFav}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: isMobile ? '8px' : '8px 16px', borderRadius: '100px', border: `1.5px solid ${fav ? C.primary : C.border}`, backgroundColor: fav ? C.accent : 'transparent', color: fav ? C.primary : C.light, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: SANS }}>

@@ -1,4 +1,4 @@
-// Page d'accueil — landing page en 8 sections avec animations au scroll.
+﻿// Page d'accueil — landing page en 8 sections avec animations au scroll.
 // Pas d'appels API : contenu entièrement statique, optimisé pour les performances initiales.
 // FadeIn utilise useInView (framer-motion) avec margin:-80px pour déclencher avant que
 // l'élément soit complètement visible — évite un effet "pop" trop tardif au scroll.
@@ -129,7 +129,7 @@ const Navbar = ({ onConnexion, onInscription, onTuteurs, onMatieres, onBlog, cur
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 5%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: isMobile ? '64px' : '80px' }}>
         {/* Logo */}
-        <img src="/logo.png" alt="e-Tutorat" style={{ height: isMobile ? '40px' : '48px', width: 'auto', objectFit: 'contain' }} />
+        <img src="/logo.svg" alt="e-Tutorat" style={{ height: isMobile ? '60px' : '80px', width: 'auto', objectFit: 'contain' }} />
 
         {/* Links desktop */}
         {!isMobile && (
@@ -545,7 +545,7 @@ const Footer = ({ onLegal, onTuteurs, onInscription, onBlog, onMatieres }) => {
       {/* Brand */}
       <div>
         <div style={{ marginBottom: '20px' }}>
-          <img src="/logo.png" alt="e-Tutorat" style={{ height: '52px', width: 'auto', objectFit: 'contain', borderRadius: '12px', backgroundColor: '#fff', padding: '4px 8px' }} />
+          <img src="/logo.svg" alt="e-Tutorat" style={{ height: '80px', width: 'auto', objectFit: 'contain' }} />
         </div>
         <p style={{ fontSize: '1rem', lineHeight: 1.7, maxWidth: '300px', marginBottom: '28px' }}>
           La première plateforme de tutorat en ligne dédiée aux élèves sénégalais. Du CI à la Terminale.
