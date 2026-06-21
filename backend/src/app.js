@@ -59,9 +59,18 @@ app.use('/api/reviews',       require('./routes/reviews'));
 app.use('/api/articles',      require('./routes/articles'));
 
 // Endpoint de santé utilisé par le frontend pour "réveiller" le backend Render (cold start)
-app.get('/api/health', (_, res) => {
+// et par cron-job.org pour maintenir Supabase actif (évite la mise en veille après 7 jours)
+app.get('/api/health', async (_, res) => {
   const { smtpStatus } = require('./emails/sender');
-  res.json({ ok: true, env: process.env.NODE_ENV, smtp: smtpStatus() });
+  const prisma = require('./prisma');
+  let dbOk = false;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbOk = true;
+  } catch (e) {
+    console.error('[HEALTH] DB ping échoué :', e.message);
+  }
+  res.json({ ok: true, db: dbOk, env: process.env.NODE_ENV, smtp: smtpStatus() });
 });
 
 module.exports = app;
